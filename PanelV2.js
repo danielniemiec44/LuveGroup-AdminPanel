@@ -6,15 +6,17 @@ import { useRef, useEffect, useState } from 'react';
 import NoSpacingGrid from "./NoSpacingGrid";
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ExpandingRow from "./ExpandingRow.js";
+import Nav from './Nav';
 
 export default function PanelV2(props) {
     const passwordRef = useRef(null);
     const [signedIn, setSignedIn] = React.useState(false);
     const [rows, setRows] = React.useState([]);
     const [password, setPassword] = React.useState("");
-    const [dateStart, setDateStart] = React.useState(null);
-    const [dateEnd, setDateEnd] = React.useState(null);
-    const [calendarDaysBefore, setCalendarDaysBefore] = React.useState(null)
+
+    const [calendarSelectionStart, setCalendarSelectionStart] = React.useState(Date.now())
+    const [calendarSelectionEnd, setCalendarSelectionEnd] = React.useState(Date.now())
+    
     
 
   function login(event, sD, eD) {
@@ -22,12 +24,12 @@ export default function PanelV2(props) {
       event.preventDefault();
     }
 
-    var sDC = dateStart;
+    var sDC = props.calendarSelectionStart;
     if(sD != null) {
       sDC = sD
     }
 
-    var eDC = dateEnd;
+    var eDC = props.calendarSelectionEnd;
     if(eD != null) {
       eDC = eD
     }
@@ -82,6 +84,7 @@ export default function PanelV2(props) {
 }
 
 
+/*
 function setDateRange(dateStart, dateEnd) {
     setDateStart(dateStart);
     setDateEnd(dateEnd);
@@ -92,7 +95,7 @@ function setDateRange(dateStart, dateEnd) {
       dateEnd.toISOString().split('T')[0];
     props.setDateLabel(newDateLabel); // Pass dateLabel to App component
   }
-
+*/
 
 
 
@@ -118,15 +121,15 @@ function setDateRange(dateStart, dateEnd) {
   }
 
 
-    var oldDate = new Date(Date.parse(props.selectedMonth));
+    var oldDate = new Date(Date.parse(props.calendarSelectionStart));
     oldDate.setMonth(oldDate.getMonth() + monthsToAdd);
     var startDate = new Date(oldDate.getFullYear(), oldDate.getMonth(), 2)
     var endDate = new Date(oldDate.getFullYear(), oldDate.getMonth() + 1, 1)
-    setDateStart(startDate);
-    setDateEnd(endDate)
+    setCalendarSelectionStart(startDate);
+    setCalendarSelectionEnd(endDate);
     //var options = { year: 'numeric', month: 'long', day: 'numeric' };
-    props.setSelectedMonth(oldDate.toISOString().split('T')[0]);
-    setDateLabel(startDate.toISOString().split('T')[0] + " - " + endDate.toISOString().split('T')[0]);
+    //props.setSelectedMonth(oldDate.toISOString().split('T')[0]);
+    //setDateLabel(startDate.toISOString().split('T')[0] + " - " + endDate.toISOString().split('T')[0]);
     login(null, startDate, endDate);
 }
 
@@ -141,8 +144,9 @@ useEffect(() => {
       
     }
 
-}, [props.monthState])
+//}, [props.monthState])
 
+  }, [])
 
     function handlePasswordChange() {
         setPassword(passwordRef.current.value)
@@ -151,7 +155,9 @@ useEffect(() => {
       
 
     return (
+      
         <Box>
+          <Nav calendarSelectionStart={calendarSelectionStart} calendarSelectionEnd={calendarSelectionEnd} setCalendarSelectionStart={setCalendarSelectionStart} setCalendarSelectionEnd={setCalendarSelectionEnd} />
             {signedIn ? (
                 <React.Fragment>
 
@@ -194,6 +200,7 @@ useEffect(() => {
         </Paper>
       </Box>
     )}
+   
     </Box>
     )
 

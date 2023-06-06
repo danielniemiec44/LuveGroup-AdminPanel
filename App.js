@@ -1,7 +1,6 @@
 import React from "react";
 import Main from "./Main";
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
-import Panel from "./Panel";
 import { Box } from "@mui/system";
 import ResponsiveAppBar from "./ResponsiveAppBar";
 import { useEffect, useState, useRef } from 'react';
@@ -10,9 +9,10 @@ import LoadingOverlay from './LoadingOverlay';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from 'react-toastify';
 import Overlay from "./Overlay";
-import { Button, Grid, Paper, Typography } from "@mui/material";
+import { Button, Grid, Paper, Stack, Typography } from "@mui/material";
 import PanelV2 from "./PanelV2";
 import { createContext, useContext } from 'react';
+import Nav from "./Nav";
 
 export default function App(props) {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -26,9 +26,6 @@ export default function App(props) {
   const [contactErrorInfo, setContactErrorInfo] = useState(false);
 
 
-  const [dateStart, setDateStart] = React.useState(null);
-  const [dateEnd, setDateEnd] = React.useState(null);
-  const [selectedMonth, setSelectedMonth] = React.useState(new Date(new Date(Date.now()).getFullYear(), new Date(Date.now()).getMonth(), 2).toISOString().split('T')[0]);
   const [dateLabel, setDateLabel] = React.useState("Nie można wczytać daty!");
 
 
@@ -37,7 +34,7 @@ export default function App(props) {
   const [rows, setRows] = React.useState([]);
   const [password, setPassword] = React.useState("");
 
-  const [monthState, setMonthState] = React.useState(0);
+
   
   
 
@@ -112,6 +109,13 @@ useEffect(() => {
 
 
 return (
+  <Box>
+  <Grid container style={{ position: "fixed" }}>
+  <Grid item xs={12}>
+      <ResponsiveAppBar showAdminPanel={showAdminPanel} userId={userId} name={name} surname={surname} dateLabel={dateLabel} />
+          </Grid>
+          
+      </Grid>
   <Box component="main" sx={{ py: 15 }}>
     <LoadingOverlay loading={loading} />
       {contactErrorInfo && (
@@ -137,34 +141,25 @@ return (
         
       )}
       <ToastContainer />
+      
+      
   <Router>
               <Routes>
                   <Route exact path="/" element={
                   <div><Main userId={userId} setUserId={handleUserIdChange} name={name} setName={setName} surname={surname} setSurname={setSurname} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} /></div>
                   } ></Route>
-                  <Route exact path="/panel" element={
-                    <div><Panel setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }}
-                    
-                    
-                    /></div>
-                  }>
-                    
-                    </Route>
+                  
 
 
                     <Route exact path="/panelv2" element={
-                    <PanelV2 setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }}
-                    
-                    setDateLabel={setDateLabel} monthState={monthState} setMonthState={setMonthState}
-
-                    selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}
-                    />
+                    <PanelV2 setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} />
                   }>
                     
                     </Route>
               </Routes>
           </Router>
-          <ResponsiveAppBar showAdminPanel={showAdminPanel} userId={userId} name={name} surname={surname} dateLabel={dateLabel} monthState={monthState} setMonthState={setMonthState} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
+          
+          </Box>
           </Box>
 )
 }
