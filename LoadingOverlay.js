@@ -17,9 +17,9 @@ export default function LoadingOverlay(props) {
             <Grid container>
             
               <Grid item xs={12}>
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 5 }}>
-          <CircularProgress size={50} sx={{marginRight: 3}} />
-          <Typography variant="h4">Proszę czekać</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 5, boxSizing: "border-box" }}>
+          <CircularProgress size={50} sx={{marginRight: 5}} />
+          <Typography variant="h6">{ props.getSelectedLanguageString("pleaseWait") }</Typography>
           </Box>
           </Grid>
           

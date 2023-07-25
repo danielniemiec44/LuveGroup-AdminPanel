@@ -212,12 +212,11 @@ return (
               >
                 <TableCell style={{ fontSize: "30px" }}>{leak.id}</TableCell>
                 <TableCell style={{ fontSize: "20px" }}>
-                  {leak.description}
+                  { props.getSelectedLanguageString("leak" + leak.id) }
                 </TableCell>
                 <TableCell>
                   <img
                     src={getLeakImage(leak.id)}
-                    alt={leak.description}
                     width="200"
                   />
                 </TableCell>

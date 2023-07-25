@@ -57,18 +57,18 @@ export default function SelectDialog(props) {
               <CloseIcon />
             </IconButton>
             <Typography variant="h6" component="div">
-              Wybierz nieszczelność
+              { props.getSelectedLanguageString("chooseLeak") }
             </Typography>
           </Toolbar>
         </AppBar>
         <Box sx={{ overflowY: 'auto', flexGrow: 1, p: 2 }}>
           <DialogContent>
-            <LeakTable selectedLeak={selectedLeak} setSelectedLeak={setSelectedLeak} leaks={props.leaks} />
+            <LeakTable selectedLeak={selectedLeak} setSelectedLeak={setSelectedLeak} leaks={props.leaks} getSelectedLanguageString={props.getSelectedLanguageString} />
           </DialogContent>
         </Box>
         <DialogActions>
           <Button size="large" onClick={ () => { props.handleClose(selectedLeak) } } color="primary" disabled={ selectedLeak == null }>
-            Zatwierdź
+          { props.getSelectedLanguageString("apply") }
           </Button>
         </DialogActions>
       </Dialog>
