@@ -14,25 +14,14 @@ import {
   Typography,
   DialogContent,
   DialogActions,
-  Box
+  Box,
+  Grid
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import CustomToggle from './CustomToggle';
 
 export default function SelectDialog(props) {
-  const [selectedLeak, setSelectedLeak] = useState(null);
-    
 
-
-
-
-
-  useEffect(() => {
-    if (props.open) {
-      setSelectedLeak(null); // Reset selectedLeak to null when the dialog is opened
-    }
-  }, [props.open]);
-
-      
 
   return (
     <div>
@@ -47,28 +36,37 @@ export default function SelectDialog(props) {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            height: '90vh', // Set a height for the Dialog, e.g., 90% of the viewport height
+            height: 500, // Set a height for the Dialog, e.g., 90% of the viewport height
           },
         }}
       >
         <AppBar position="static">
-          <Toolbar>
-            <IconButton edge="start" color="inherit" onClick={() => { props.handleClose(null) }} aria-label="close">
+          <Toolbar style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="h6" component="div">
+              { props.getSelectedLanguageString("chooseHeliumMachines") }
+            </Typography>
+
+            <IconButton edge="end" color="inherit" onClick={() => { props.handleClose(null) }} aria-label="close">
               <CloseIcon />
             </IconButton>
-            <Typography variant="h6" component="div">
-              { props.getSelectedLanguageString("chooseLeak") }
-            </Typography>
           </Toolbar>
         </AppBar>
         <Box sx={{ overflowY: 'auto', flexGrow: 1, p: 2 }}>
           <DialogContent>
-            <LeakTable selectedLeak={selectedLeak} setSelectedLeak={setSelectedLeak} leaks={props.leaks} getSelectedLanguageString={props.getSelectedLanguageString} />
+          <Grid container spacing={1} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {props.availableHeliumMachines?.map((heliumMachine, index) => {
+              return (
+                  <Grid item>
+                    <CustomToggle index={index} selectedHeliumMachinesId={props.selectedHeliumMachinesId} setSelectedHeliumMachinesId={props.setSelectedHeliumMachinesId} label={heliumMachine.name} />
+                  </Grid>
+              );
+            })}
+            </Grid>
           </DialogContent>
         </Box>
-        <DialogActions>
-          <Button size="large" onClick={ () => { props.handleClose(selectedLeak) } } color="primary" disabled={ selectedLeak == null }>
-          { props.getSelectedLanguageString("apply") }
+        <DialogActions style={{ display: "flex", justifyContent: "center" }}>
+          <Button size="large" variant="contained" onClick={ () => { props.handleClose() } } color="primary" disabled={ props.selectedHeliumMachinesId.length == 0 }>
+          { "Pobierz wybrane pliki CSV i wyświetl" }
           </Button>
         </DialogActions>
       </Dialog>

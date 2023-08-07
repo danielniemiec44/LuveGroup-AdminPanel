@@ -39,7 +39,7 @@ function ResponsiveAppBar(props) {
   const appBarRef = React.useRef();
   const [appBarVisible, setAppBarVisible] = React.useState(true);
 
-  const { rows, setRows } = props;
+  const { rows, setRows, searchTags, setSearchTags } = props;
 
   /*
   React.useEffect(() => {
@@ -66,24 +66,24 @@ const handleScroll = (el) => {
   if (el.scrollY <= 40 || el.scrollTop <= 40) {
     // User has scrolled to the top of the page
     console.log('User scrolled to the top!');
-    //setAppBarVisible(true);
+    setAppBarVisible(true);
     if(positioner != null) { 
-      //positioner.style.top = "200px";
+      positioner.style.top = "200px";
     };
     // You can perform any desired action here
   } else {
-    //setAppBarVisible(false);
+    setAppBarVisible(false);
     if(positioner != null) {
-      //positioner.style.top = "75px";
+      positioner.style.top = "75px";
     };
   }
 };
 
   React.useEffect(() => {
     if(appBarVisible) {
-      //appBarRef.current.style.top = 0;
+      appBarRef.current.style.top = 0;
     } else {
-      //appBarRef.current.style.top = "-120px";
+      appBarRef.current.style.top = "-120px";
     }
   }, [appBarVisible])
   
@@ -229,7 +229,7 @@ const handleScroll = (el) => {
           </div>
           {props.showNav == true && (
             <div style={{ position: "absolute", background: "red", width: "100%", overflow: "visible", marginTop: 115, textAlign: "center" }}>
-            <Nav headers={headers[appName]} filteredRows={props.filteredRows} setFilteredRows={props.setFilteredRows} isSearching={props.isSearching} setIsSearching={props.setIsSearching} searchValue={props.searchValue} setSearchValue={props.setSearchValue} rows={rows} setRows={setRows} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} selectedLanguage={props.selectedLanguage} refreshData={refreshData} setRefreshData={setRefreshData} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            <Nav selectedHeliumMachinesId={props.selectedHeliumMachinesId} availableHeliumMachines={props.selectedHeliumMachinesId} appName={appName} heliumSelectorOpen={props.heliumSelectorOpen} setHeliumSelectorOpen={props.setHeliumSelectorOpen} headers={headers[appName]} filteredRows={props.filteredRows} setFilteredRows={props.setFilteredRows} isSearching={props.isSearching} setIsSearching={props.setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} selectedLanguage={props.selectedLanguage} refreshData={refreshData} setRefreshData={setRefreshData} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} />
           </div>
           )}
           

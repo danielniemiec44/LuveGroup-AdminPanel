@@ -12,7 +12,7 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import logo from "./logo.jpg"
 import { Link } from 'react-router-dom';
-import { Alert, CircularProgress, Divider, Drawer, Grid, List, ListItem, ListItemText, Paper, TextField } from '@mui/material';
+import { Alert, Chip, CircularProgress, Divider, Drawer, Grid, InputAdornment, List, ListItem, ListItemText, Paper, TextField } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 
 import { createContext, useContext } from 'react';
@@ -46,7 +46,9 @@ export const useStyles = makeStyles((theme) => ({
   },
   drawer: {
     width: "100%",
-    flexShrink: 0,
+    display: "flex",
+    justifyContent: "space-between",
+    zIndex: 1
   },
   drawerPaper: {
     width: "100%",
@@ -186,7 +188,21 @@ export default function Nav(props) {
     const { rows, setRows } = props;
     const searchInputRef = useRef(null);
 
+    const [exporting, setExporting] = useState("")
+
+    const { searchTags, setSearchTags } = props;
+
+    const [inputValue, setInputValue] = useState('');
+
     
+    const adornmentRef = useRef(null);
+    const [adornmentWidth, setAdornmentWidth] = useState(0);
+
+    useEffect(() => {
+      setTimeout(() => {
+        setExporting("Żadne dane nie zostały załadowane!")
+      }, 1000)
+    }, [exporting])
 
     /*
     const getCalendarVisibleMonth = () => {
@@ -435,25 +451,103 @@ export default function Nav(props) {
     setCalendarVisibleMonth(date)
   }
 
+  const handleInputChange = (event) => {
+    setInputValue(event.target.value);
+  };
+
+  const handleInputKeyPress = (event) => {
+    if (!event || [' ', 'Enter'].includes(event.key)) {
+      const newTag = inputValue.trim();
+      if (newTag) {
+        setSearchTags([...searchTags, newTag]);
+        setInputValue('');
+
+        if(event) {
+      event.preventDefault();
+        }
+    }
+      
+      }
+    }
+
+  const handleDeleteTag = (tagToDelete) => {
+    setSearchTags(searchTags.filter((tag) => tag !== tagToDelete));
+  };
+
+
+  useEffect(() => {
+    if (adornmentRef.current) {
+      setAdornmentWidth(adornmentRef.current.offsetWidth);
+    }
+  }, [searchTags]);
+
+  const textFieldWidth = `calc(${adornmentWidth}px + 150px)`;
 
 
     return (
       <React.Fragment>
         <Paper>
-    <Grid item xs={12} display="flex" alignItems="center" justifyContent="center">
-      <Box display="flex" alignItems="center" justifyContent="center" width="100%">
-        <Drawer
+    <Grid item xs={12} display="flex">
+      <Box display="flex" width="100%">
+        <Paper
           className={classes.drawer}
-          variant="permanent"
-          classes={{
-            paper: classes.drawerPaper,
-          }}
         >
-          <List className={classes.list} style={{ display: "inline-flex" }}>
+          
           <NavOption variant="back" autoWidth />
             
 
-            <ListItem button className={classes.listItemLong} ref={calendarButtonRef}>
+           
+
+
+
+
+
+
+
+
+         
+         <List className={classes.list} style={{ display: "flex", flex: 1 }}>
+
+         
+            
+            
+             { /*TODO: Check why does not work properly: 
+             <NavOption variant="refresh" refresh={refresh} label="Odśwież" autoWidth />
+              */ }
+
+
+            
+          
+            
+           
+            
+            
+
+            {/* Odświeżanie danych */}
+            
+
+
+            {props.appName == "HeliumTest" && (
+              <NavOption variant="openHeliumSelector" label={"Wybierz helownice"} autoWidth setHeliumSelectorOpen={props.setHeliumSelectorOpen} />
+            )}
+
+            <NavOption variant="pagination" label={`Strona: ${currentPage + 1}/${pagesCount}`} count={pagesCount} setCurrentPage={setCurrentPage} />
+
+             <CSVLink data={exporting} filename={'Export.csv'} separator=";" headers={ props.headers } onClick={
+              () => {
+                setExporting(props.filteredRows);
+              }
+            }>
+              <NavOption variant="export" label="Exportuj do CSV" autoWidth />
+            </CSVLink>
+            
+            
+            
+            
+          </List>
+
+
+          <ListItem className={classes.listItemLong} button ref={calendarButtonRef} sx={{ flex: 2 }}>
             
               <ListItemText primary={(
                 <Box display="flex" alignItems="center" justifyContent="center">
@@ -471,54 +565,50 @@ export default function Nav(props) {
               
             </ListItem>
 
-
-
-
-
-
-
-
-            <NavOption variant="pagination" label={`Strona: ${currentPage + 1}/${pagesCount}`} count={pagesCount} setCurrentPage={setCurrentPage} />
-            
-             { /*TODO: Check why does not work properly: 
-             <NavOption variant="refresh" refresh={refresh} label="Odśwież" autoWidth />
-              */ }
-
-            <CSVLink data={props.filteredRows} filename={'Export.csv'} separator=";" headers={ props.headers }>
-              <NavOption variant="export" label="Exportuj do CSV" autoWidth />
-            </CSVLink>
-
-            {/* Odświeżanie danych */}
-            
-
-
-            
-            
-          </List>
-
-          <Box sx={{ position: 'absolute', right: 20, boxSizing: 'border-box', display: "flex", alignItems: 'center', justifyContent: 'center', top: 5 }}>
-                  <form onSubmit={(event) => {
+          <Box sx={{ display: "flex", alignItems: 'center', justifyContent: 'center', ml: 1, mr: 1, flex: 1, justifyContent: 'flex-end' }}>
+                  <form style={{ display: "flex", justifyContent: 'space-between' }} onSubmit={(event) => {
+                    //props.setSearchValue(searchTags);
                       event.preventDefault();
-                      if(searchInputRef.current.value != props.searchValue) {
-                        props.setIsSearching(true);
-                      }
                       
-                      props.setSearchValue(searchInputRef.current.value);
-                      console.log("Search value: " + searchInputRef.current.value)
+                      
+                      
                       
                     }}>
-                  <TextField
+                      
+                        <TextField
                     id="standard-search"
                     label="Wyszukaj"
                     type="search"
                     variant="standard"
+                    value={inputValue}
                     inputRef={searchInputRef}
                     sx={{ marginRight: 2 }}
+                    onChange={handleInputChange}
+                    onKeyPress={handleInputKeyPress}
+                    style={{ }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start" ref={adornmentRef}>
+                          {searchTags.map((tag, index) => (
+                            <Chip
+                              key={index}
+                              label={tag}
+                              onDelete={() => handleDeleteTag(tag)}
+                              style={{ margin: '2px' }}
+                            />
+                          ))}
+                        </InputAdornment>
+                      ),
+                      
+                    }}
+                    style={{width: textFieldWidth}}
                   />
+                  
+                  
 
-                  <SquareButton type="submit" size="50" variant='contained'>
+                  <SquareButton type="button" onClick={ () => { handleInputKeyPress(null) }} size="50" variant='contained'>
                     { props.isSearching ? (
-                      <CircularProgress size={20} color="inherit" style={{ }} />
+                      <CircularProgress size={20} color="inherit" disableShrink />
                     ) : (
                       <SearchIcon fontSize='large' />
                     ) }
@@ -529,7 +619,7 @@ export default function Nav(props) {
                 </Box>
                 
           
-        </Drawer>
+        </Paper>
       </Box>
     </Grid>
     </Paper>

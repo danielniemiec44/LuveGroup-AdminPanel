@@ -16,6 +16,9 @@ import { textAlign } from '@mui/system';
 import { columnOrder, headers } from './App';
 import EditModal from './EditModal';
 import Papa from 'papaparse';
+import { DensityLarge } from '@mui/icons-material';
+
+import BlockIcon from '@mui/icons-material/Block';
 
 /*
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -57,20 +60,23 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: 'bold',
     boxShadow: '0px 0px 3px 1px rgba(0, 0, 0, 0.5)',
     textAlign: 'center',
-    padding: "5px",
+    paddingTop: "2px",
+    paddingBottom: "2px",
+    paddingLeft: "2px",
+    paddingRight: "2px",
     
   },
   body: {
-    backgroundColor: 'rgb(100, 100, 100, 0.85)',
     color: 'white',
-    fontWeight: 'bolder',
     fontSize: '15px',
     boxShadow: '0px 0px 3px 1px rgba(0, 0, 0, 0.5)',
     textAlign: 'center',
-    padding: "5px",
-    '&:hover': {
-      backgroundColor: 'rgb(100, 100, 100, 1)',
-    },
+    paddingTop: "2px",
+    paddingBottom: "2px",
+    paddingLeft: "2px",
+    paddingRight: "2px",
+    minWidth: "125px",
+    textShadow: "2px 2px 2px rgba(0, 0, 0, 1)",
   },
   lastChild: {
     '&:last-child td, &:last-child th': {
@@ -88,10 +94,12 @@ export default function PanelV2(props) {
   const [editModalState, setEditModalState] = useState(null);
   const { appName } = useParams()
 
+  const [readyForRender, setReadyForRender] = useState(false);
+
     const passwordRef = useRef(null);
     
     
-    const { rows, setRows, isSignedInByLink, userId } = props;
+    const { rows, setRows, isSignedInByLink, userId, searchTags, setSearchTags } = props;
 
     if(!sessionStorage.getItem("userId")) {
       window.location.href = "/";
@@ -112,10 +120,21 @@ export default function PanelV2(props) {
     const extractedHeaders = headers[appName]
 
 
+    const tempRows = useRef([])
+
+    const tempHeliumHeaders = useRef();
 
 
+    const visibleRowsNames = useRef(["ODP", "OPERATOR", "RECIPE", "DESCRIPTION", "CODE", "SERIAL", "POS", "DATE-TIME", "RESULT", "PRESSURE G33H", "PRESSURE G35H", "G3 MEM(mbar l/s)", "Anomaly" ]);
 
     
+    useEffect(() => {
+      if(appName == "HeliumTest") {
+        setDateStart(new Date(2000, 0, 1))
+      }
+    }, [])
+
+    const promises = useRef([]);
     
 
     
@@ -172,6 +191,7 @@ function setDateRange(dateStart, dateEnd) {
 */
 
   useEffect(() => {
+    if(props.token != null) {
     if(appName == "Leaks") {
       fetchLeaks();
         /*handleMonthChange();
@@ -202,12 +222,14 @@ function setDateRange(dateStart, dateEnd) {
       setRefreshData(false);
     }
   } else if(appName == "HeliumTest") {
-    fetchHelium();
+    props.setHeliumSelectorOpen(true);
+    //fetchHelium();
+    listHeliumMachines();
 
     if(refreshData == true) {
       console.log("Refreshing data...")
       //login();
-      fetchHelium();
+      //fetchHelium();
       setRefreshData(false);
     }
   }
@@ -251,6 +273,8 @@ function setDateRange(dateStart, dateEnd) {
                   //console.log("Data result length: " + data.leaks.length)
                   
                   setCurrentPage(0);
+                } else if((data.result === "error")) {
+                  denyAccess(data.message)
                 }
             })
         }).catch(error => {
@@ -303,11 +327,12 @@ function setDateRange(dateStart, dateEnd) {
                   //console.log("Data result length: " + data.orders.length)
                   
                   setCurrentPage(0);
+                } else if((data.result === "error")) {
+                  denyAccess(data.message)
                 }
             })
         }).catch(error => {
             console.error(error);
-            props.hideLoadingScreen();
         }).finally(() => {
           props.hideLoadingScreen();
       });
@@ -321,6 +346,120 @@ function setDateRange(dateStart, dateEnd) {
 
 
 
+
+
+
+
+  
+
+  function listHeliumMachines() {
+    props.showLoadingScreen();
+    fetch("/helium_list_machines?token=" + props.token, {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+          'token': props.token,
+      })
+  }).then(response => {
+      response.json().then(data => {
+          //console.log(data);
+          if (data.result === "success") {
+            console.log("Available machines:" + data)
+            //props.setAvailableHeliumMachines(data.machines);
+            props.setAvailableHeliumMachines(data["machines"]);
+          } else if((data.result === "error")) {
+            denyAccess(data.message)
+          }
+      })
+  }).catch(error => {
+      console.error(error);
+  }).finally(() => {
+    props.hideLoadingScreen();
+});
+  }
+
+  
+    }
+  }, [refreshData, props.token])
+
+
+
+
+  // Define a function to perform the parsing of a single machine
+const parseMachineData = (machineIndex, machineIteration, props) => {
+  const machineName = props.availableHeliumMachines[machineIndex]["name"];
+ 
+  return new Promise((resolve, reject) => {
+    Papa.parse("/helium_read?token=" + props.token + "&machine=" + machineName + "&index=" + machineIteration, {
+      download: true,
+      fastMode: false,
+      encoding: "utf-8",
+      ignoreEmptyLines: true,
+      header: true,
+      complete: function(results) {
+        //props.setHeliumHeaders(results.meta.fields);
+        console.log("Headers look like: ", results.meta.fields);
+        //concat this but ignoring duplicates
+        tempHeliumHeaders.current = tempHeliumHeaders.current.concat(results.meta.fields.filter(field => visibleRowsNames.current.includes(field) && !tempHeliumHeaders.current.includes(field)));
+        
+      
+
+        /*
+        const visibleRowsNames = ["ODP", "OPERATOR", "RECIPE", "DESCRIPTION", "CODE", "SERIAL", "POS", "DATE-TIME", "RESULT", "PRESSURE G33H", "PRESSURE G35H", "G3 MEM(mbar l/s)", "Anomaly" ];
+        const head = results.data.slice(0, 1);
+        
+        var visibleRowsIndexes = [];
+        head.map((row) => row.filter((_, index) => visibleRowsNames.includes(row[index]) ? visibleRowsIndexes.push(index) : null));
+
+        const modifiedData = results.data.map((row) => row.filter((_, index) => visibleRowsIndexes.includes(index)));
+        // Prepend the machine name to each row
+        const dataWithMachineName = modifiedData.map((row, index) => {
+          return index !== 0 ? [machineName, ...row] : row;
+        });
+        */
+
+        //console.log("Results look like: " + results.data.toLocaleString());
+
+        // Prepend the machine name to each row
+        const dataWithMachineName = results.data.map((row, index) => {
+          return { MachineName: machineName, ...row };
+        });
+
+
+        tempRows.current = tempRows.current.concat(dataWithMachineName);
+        //tempRows.current = [visibleRowsNames, ...tempRows.current];
+        console.log("Parsing file " + machineName + " complete!");
+
+        resolve(); // Resolve the promise when parsing is complete
+      },
+      error: function(error) {
+        reject(error); // Reject the promise if an error occurs during parsing
+      }
+    });
+  });
+};
+
+
+
+ const denyAccess = (message) => {
+  alert("Error: " + message);
+  window.location.href = "/";
+}
+
+
+
+
+const getPromises = () => {
+  var promises = [];
+  props.selectedHeliumMachinesId.forEach((machineIndex) => {
+    for (var i = 0; i < props.availableHeliumMachines[machineIndex]["files_count"]; i++) {
+      promises.push(parseMachineData(machineIndex, i, props));
+    }
+  });
+  return promises;
+}
 
 
   function fetchHelium(event) {
@@ -329,95 +468,106 @@ function setDateRange(dateStart, dateEnd) {
     }
 
         props.showLoadingScreen();
-        console.log("Attempt to login...");
+        setRows([]);
+        props.setFilteredRows([]);
+        tempHeliumHeaders.current = [];
+        tempRows.current = [];
 
-/*
+    
+  
+    
 
-        var dS = new Date(dateStart)
-        var dSOffset = dS.getTimezoneOffset() * 60000;
-        var dS = new Date(dS.getTime() - dSOffset);
-        var dS = dS.toISOString();
-
-        var dE = new Date(dateEnd)
-        var dEOffset = dE.getTimezoneOffset() * 60000;
-        var dE = new Date(dE.getTime() - dEOffset);
-        var dE = dE.toISOString();
-*/
-
-        Papa.parse("/helium_read", {
-          download: true,
-          complete: function(results) {
-            setRows(results.data);
-            console.log("Parsing complete!");
-            props.hideLoadingScreen();
-          }
-        });
-        
-
-
-/*
-        fetch("http://10.2.2.238:5100/helium_read", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                'token': props.token,
-            })
-        }).then(response => {
-            response.json().then(data => {
-                console.log(data);
-                if (data.result === "success") {
-
-
-                  //setRows();
-                  
-                  setCurrentPage(0);
-                }
-            })
-        }).catch(error => {
-            console.error(error);
-            props.hideLoadingScreen();
-        }).finally(() => {
-          props.hideLoadingScreen();
-      });
-      */
+Promise.all(getPromises())
+.then(() => {
+  setRows(tempRows.current);
+  props.setHeliumHeaders(tempHeliumHeaders.current);
+  console.log("All machines parsed!");
+  console.log("First row: " + tempRows.current[0]);
+  tempHeliumHeaders.current = [];
+})
+.catch((error) => {
+  console.error("Error occurred while parsing machines:", error);
+  props.notify("error", "contact")
+})
+.finally(() => {
+  props.hideLoadingScreen();
+});
+  
+      
   }
-  
-  
-  
-  
-
-
-  
-
-
-  }, [refreshData])
-
-
 
 
 
   useEffect(() => {
-    if (props.searchValue == "") {
-      console.log("All rows shown!")
-      props.setFilteredRows(rows);
-    } else {
-      //const filtered = rows.filter(element => element.includes(props.searchValue));
-      //filter all rows and inside rows filter any data and also convert to lowercase and also show only unique values
-
-      const filtered = rows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase().includes(props.searchValue.toLocaleLowerCase())));
-      
-      
-      
-      
-      //const filtered = rows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase().includes(props.searchValue.toLocaleLowerCase())));
-
-      props.setFilteredRows(filtered);
-    }
-    props.setIsSearching(false);
+    console.log("Search tags: ", searchTags)
+    props.showLoadingScreen();
+    props.setIsSearching(true);
     
-  }, [props.searchValue, rows])
+  }, [searchTags, rows])
+
+
+  useEffect(() => {
+    if(!props.heliumSelectorOpen) {
+      fetchHelium();
+    }
+  }, [props.heliumSelectorOpen])
+
+
+  useEffect(() => {
+    console.log("Promises changed to: " + promises.current)
+  }, [promises.current])
+
+
+
+  useEffect(() => {
+    if (props.isSearching) {
+      if(appName == "HeliumTest") {
+        var filtered2 = [];
+
+      if (searchTags?.length == 0) {
+        console.log("All rows shown!");
+        filtered2 = rows.slice().reverse(); // Exclude the first row using slice(1)
+      } else {
+        const filtered = rows.filter((row) => {
+          return searchTags.some((tag) => {
+            return Object.values(row).some((value) => {
+              return String(value).toLowerCase().includes(tag.toLowerCase());
+            });
+          });
+        });
+        
+        filtered2 = filtered.slice().reverse();
+      }
+
+      
+      const filteredByDate = filtered2.filter((item) => {
+        const itemDate = new Date(item["DATE-TIME"]);
+        return itemDate >= dateStart && itemDate <= dateEnd;
+      });
+
+      console.log("Filtered rows: ", filteredByDate)
+      props.setFilteredRows(filteredByDate);
+
+
+    } else {
+      //TODO: Zrobić też dla innych aplikacji
+      if (searchTags?.length == 0) {
+        console.log("All rows shown!");
+        props.setFilteredRows(rows); // Exclude the first row using slice(1)
+      } else {
+        const filtered = rows.filter((row, index) => {
+          return Object.values(row).some((value) =>
+            String(value).toLowerCase().includes(searchTags[0].toLowerCase())
+          );
+        });
+  
+        props.setFilteredRows(filtered);
+    }
+  }
+}
+
+  }, [appName, props.isSearching, searchTags]);
+
   
 
 
@@ -425,6 +575,8 @@ function setDateRange(dateStart, dateEnd) {
   useEffect(() => {
     setPagesCount(Math.ceil(props.filteredRows.length / rowsPerPage));
     setCurrentPage(0);
+      props.setIsSearching(false);
+      props.hideLoadingScreen();
   }, [props.filteredRows])
 
 
@@ -436,13 +588,12 @@ function setDateRange(dateStart, dateEnd) {
 
 
 
-
-
       
 
     return (
       
         <Box>
+          
 {appName == "Leaks" ? (
 
     <React.Fragment>
@@ -489,17 +640,17 @@ function setDateRange(dateStart, dateEnd) {
                   return <TableCell key={columnId} className={`${classes.head} ${tableCellClasses.head}`}>{extractedHeaders[columnId]}</TableCell>;
                 })}
                 
-                <TableCell className={`${classes.head} ${tableCellClasses.head}`}>Akcje</TableCell>
+                {<TableCell className={`${classes.head} ${tableCellClasses.head}`}>Akcje</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
               {props.filteredRows.length > 0 && props.filteredRows.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(order => (
-                <TableRow>
+                <TableRow style={{ background: "rgba(0, 0, 0, 0.5)" }}>
                   { columnOrder[appName].map(columnId => {
                     return <TableCell key={columnId} className={`${classes.body} ${tableCellClasses.body}`}>{ order[columnId]?.toLocaleString() }</TableCell>;
                   })}
                 
-                <TableCell className={`${classes.body} ${tableCellClasses.body}`}><Button variant="contained" onClick={() => { console.log("Showing edit modal for id: " + order[0]); setEditModalState(order[0])}}>Edytuj</Button></TableCell>
+                { <TableCell className={`${classes.body} ${tableCellClasses.body}`}><Button variant="contained" onClick={() => { console.log("Showing edit modal for id: " + order[0]); setEditModalState(order[0])}}>Edytuj</Button></TableCell>}
               </TableRow>
               ))}
             </TableBody>
@@ -516,24 +667,50 @@ function setDateRange(dateStart, dateEnd) {
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            {props.filteredRows[0]?.map(columnName => (
+            <TableCell className={`${classes.head} ${tableCellClasses.head}`}>Nazwa maszyny</TableCell>
+            {
+            /*props.rows[0]?.map(columnName => (
               <TableCell key={columnName} className={`${classes.head} ${tableCellClasses.head}`}>{columnName}</TableCell>
-            ))}
+            ))*/}
+            
+
+              {props.heliumHeaders?.map((heliumHeader, index) => (
+                visibleRowsNames.current.includes(heliumHeader) && (
+                  <TableCell key={index} className={`${classes.head} ${tableCellClasses.head}`}>{heliumHeader}</TableCell>
+                )
+              ))}
+
+            
             {/* If you want an additional column for actions, you can include it here */}
             {/* <TableCell className={`${classes.head} ${tableCellClasses.head}`}>Actions</TableCell> */}
           </TableRow>
         </TableHead>
         <TableBody>
-          {props.filteredRows?.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map((helium, index) => (
-            <TableRow key={index}>
-              {Object.keys(helium).map(columnName => (
-                <TableCell key={columnName} className={`${classes.body}`}>{helium[columnName]?.toLocaleString()}</TableCell>
-              ))}
-              {/* If you have an actions column, you can include it here */}
-              {/* <TableCell>Actions for this row</TableCell> */}
-            </TableRow>
+  {props.filteredRows?.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map((helium, index) => {
+    const resultValue = helium["RESULT"];
+
+    return (
+      <TableRow key={index} style={{ background: resultValue === "Good" ? "rgba(0,128,0,0.9)" : resultValue === "Reject" ? "rgba(255,0,0,0.9)" : "rgba(0, 0, 0, 0.5)" }}>
+        {/*Object.keys(helium).map(columnName => (
+          (visibleRowsNames.current.includes(columnName) || columnName === "MachineName") && (
+            <TableCell key={columnName} className={`${classes.body}`}>{helium[columnName]?.toLocaleString()}</TableCell>
+          )
+          ))*/}
+
+<TableCell key={index} className={`${classes.body}`}>{helium["MachineName"]?.toLocaleString() || "Brak nazwy maszyny"}</TableCell>
+
+          {props.heliumHeaders?.map((heliumHeader, index) => (
+            (visibleRowsNames.current.includes(heliumHeader)) && (
+              <TableCell key={index} className={`${classes.body}`}>{helium[heliumHeader]?.toLocaleString() || <BlockIcon />}</TableCell>
+            )
           ))}
-        </TableBody>
+
+        {/* If you have an actions column, you can include it here */}
+        {/* <TableCell>Actions for this row</TableCell> */}
+      </TableRow>
+    );
+  })}
+</TableBody>
       </Table>
     </TableContainer>
   </Box>

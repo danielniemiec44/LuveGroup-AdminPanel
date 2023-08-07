@@ -113,6 +113,14 @@ export default function SignIn(props) {
                       props.setSurname(data.employee.surname);
                       props.setIsSignedInByLink("false");
 
+                      props.setLeaksPerms(data['employee']['leaks_perms']);
+                      props.setWoodAppPerms(data['employee']['woodapp_perms']);
+                      props.setHeliumPerms(data['employee']['helium_perms']);
+
+                      sessionStorage.setItem('leaks_perms', data['employee']['leaks_perms']);
+                      sessionStorage.setItem('woodapp_perms', data['employee']['woodapp_perms']);
+                      sessionStorage.setItem('helium_perms', data['employee']['helium_perms']);
+
                       sessionStorage.setItem('token', data.token);
                       sessionStorage.setItem('userId', userId);
                       sessionStorage.setItem('name', data.employee.name);

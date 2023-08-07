@@ -52,7 +52,7 @@ export default function AppSelector(props) {
         
         <Grid container spacing={5} sx={{ padding: 3 }}>
             <Grid item xs={12} sm={6} md={4}>
-                <Button variant="contained" color="primary" onClick={() => { navigate("/Leaks") }} className={classes.appPicker}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/Leaks" }} className={classes.appPicker} disabled={props.leaksPerms == 0}>
                     <Grid container spacing={1}>
                         <Grid item xs={12}>
                 Leaks
@@ -65,7 +65,7 @@ export default function AppSelector(props) {
                 
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-                <Button variant="contained" color="primary" onClick={() => { navigate("/WoodApp") }} className={classes.appPicker}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/WoodApp" }} className={classes.appPicker} disabled={props.woodappPerms == 0}>
                     <Grid container spacing={1}>
                         <Grid item xs={12}>
                 WoodApp
@@ -78,7 +78,7 @@ export default function AppSelector(props) {
                 
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-                <Button variant="contained" color="primary" onClick={() => { navigate("/HeliumTest") }} className={classes.appPicker}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/HeliumTest" }} className={classes.appPicker} disabled={props.heliumPerms == 0}>
                     <Grid container spacing={1}>
                         <Grid item xs={12}>
                 HeliumTest

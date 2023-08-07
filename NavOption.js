@@ -147,6 +147,10 @@ const NavOption = (props) => {
       props.refresh();
     }
 
+    if(props.variant == "openHeliumSelector") {
+      props.setHeliumSelectorOpen(true);
+    }
+
     setOpen(!open);
   };
 

@@ -27,6 +27,7 @@ import NoSpacingGrid from './NoSpacingGrid';
 import { useNavigate, useParams } from 'react-router-dom';
 import palety from "./images/palety.png"
 import woda from "./images/woda.png"
+import hel from "./images/hel.png"
 
 
 export default function Wallpaper() {
@@ -34,7 +35,7 @@ export default function Wallpaper() {
 
     return (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-    backgroundImage: (appName == "Leaks" &&`url(${woda})`) || (appName == "WoodApp" &&`url(${palety})`),
+    backgroundImage: (appName == "Leaks" &&`url(${woda})`) || (appName == "WoodApp" &&`url(${palety})`) || (appName == "HeliumTest" &&`url(${hel})`),
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
   backgroundSize: '100%',
