@@ -248,11 +248,11 @@ const NavOption = (props) => {
     label: second,
   }));
 
-  var c = 1;
+  var c = 0;
 
-if(props.count != null) {
-  c = parseInt(props.count);
-}
+  if(props.count != null && props.count != NaN) {
+    //c = props.count;
+  }
 
   const paginationItems = Array.from(Array(c), (_, index) => index).map((index) => ({
     id: `page-${index}`,

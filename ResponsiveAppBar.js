@@ -39,7 +39,7 @@ function ResponsiveAppBar(props) {
   const appBarRef = React.useRef();
   const [appBarVisible, setAppBarVisible] = React.useState(true);
 
-  const { rows, setRows, searchTags, setSearchTags } = props;
+  const { rows, searchTags, setSearchTags } = props;
 
   /*
   React.useEffect(() => {
@@ -229,7 +229,7 @@ const handleScroll = (el) => {
           </div>
           {props.showNav == true && (
             <div style={{ position: "absolute", background: "red", width: "100%", overflow: "visible", marginTop: 115, textAlign: "center" }}>
-            <Nav selectedHeliumMachinesId={props.selectedHeliumMachinesId} availableHeliumMachines={props.selectedHeliumMachinesId} appName={appName} heliumSelectorOpen={props.heliumSelectorOpen} setHeliumSelectorOpen={props.setHeliumSelectorOpen} headers={headers[appName]} filteredRows={props.filteredRows} setFilteredRows={props.setFilteredRows} isSearching={props.isSearching} setIsSearching={props.setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} selectedLanguage={props.selectedLanguage} refreshData={refreshData} setRefreshData={setRefreshData} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            <Nav selectedHeliumMachinesId={props.selectedHeliumMachinesId} availableHeliumMachines={props.selectedHeliumMachinesId} appName={appName} heliumSelectorOpen={props.heliumSelectorOpen} setHeliumSelectorOpen={props.setHeliumSelectorOpen} headers={headers[appName]} filteredRows={props.filteredRows} isSearching={props.isSearching} setIsSearching={props.setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} selectedLanguage={props.selectedLanguage} refreshData={refreshData} setRefreshData={setRefreshData} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} />
           </div>
           )}
           

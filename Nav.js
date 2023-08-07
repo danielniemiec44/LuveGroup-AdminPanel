@@ -185,7 +185,7 @@ export default function Nav(props) {
 
     const [isMobile, setIsMobile] = React.useState(false);
 
-    const { rows, setRows } = props;
+    const { rows } = props;
     const searchInputRef = useRef(null);
 
     const [exporting, setExporting] = useState("")
@@ -535,7 +535,7 @@ export default function Nav(props) {
 
              <CSVLink data={exporting} filename={'Export.csv'} separator=";" headers={ props.headers } onClick={
               () => {
-                setExporting(props.filteredRows);
+                setExporting(props.filteredRows.current);
               }
             }>
               <NavOption variant="export" label="Exportuj do CSV" autoWidth />

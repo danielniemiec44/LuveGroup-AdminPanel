@@ -25,7 +25,7 @@ export default function EditModal(props) {
 
   React.useEffect(() => {
     if(editModalState != null) {
-        rowData.current = props.filteredRows.find(record => record[0] === editModalState);
+        rowData.current = props.filteredRows.current.find(record => record[0] === editModalState);
         setNewRowData([]);
         
     }

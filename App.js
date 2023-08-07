@@ -109,8 +109,8 @@ export default function App(props) {
 
   
 
-  const [rows, setRows] = useState([]);
-  const [filteredRows, setFilteredRows] = React.useState([]);
+  const rows = useRef([]);
+  const filteredRows = React.useRef([]);
 
   const [heliumHeaders, setHeliumHeaders] = useState([]);
 
@@ -123,15 +123,18 @@ export default function App(props) {
   const [woodAppPerms, setWoodAppPerms] = useState(sessionStorage.getItem('woodapp_perms'));
   const [heliumPerms, setHeliumPerms] = useState(sessionStorage.getItem('helium_perms'));
 
-
   
 
 
 
   useEffect(() => {
-    setRows([]);
-    setFilteredRows([]);
+    rows.current = [];
+    filteredRows.current = [];
   }, []);
+
+  useEffect(() => {
+    console.log("Pages count: " + pagesCount);
+  }, [pagesCount])
 
 
 
@@ -431,7 +434,7 @@ return (
               <Routes>
                   <Route exact path="/" element={
                     <React.Fragment>
-                    <ResponsiveAppBar filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav="false" />
+                    <ResponsiveAppBar filteredRows={filteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav="false" />
                     { token && name && surname && userId ? (
                       <AppSelector leaksPerms={leaksPerms} setLeaksPerms={setLeaksPerms} woodAppPerms={woodAppPerms} setWoodAppPerms={setWoodAppPerms} heliumPerms={heliumPerms} setHeliumPerms={setHeliumPerms} getSelectedLanguageString={getSelectedLanguageString} />
                       ) : (
@@ -444,7 +447,7 @@ return (
 
                   <Route path="/Leaks/signIn/:cardNumber" element={
                       <React.Fragment>
-                        <ResponsiveAppBar filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} showNav="false" />
+                        <ResponsiveAppBar filteredRows={filteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} showNav="false" />
                         <SignInByLink cardNumber={cardNumber} setCardNumber={setCardNumber} isSignedInByLink={isSignedInByLink} setIsSignedInByLink={setIsSignedInByLink} userId={userId} setUserId={handleUserIdChange} name={name} setName={setName} surname={surname} setSurname={setSurname} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} getSelectedLanguageString={getSelectedLanguageString} selectedLanguage={selectedLanguage} token={token} setToken={setToken} />
                     </React.Fragment>
                     } />
@@ -455,8 +458,8 @@ return (
                       <React.Fragment>
                          
                         <Wallpaper />
-                        <ResponsiveAppBar selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} />
-                        <PanelV2 heliumHeaders={heliumHeaders} setHeliumHeaders={setHeliumHeaders} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} currentAppName={useParams().appName} filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} cardNumber={cardNumber} setCardNumber={setCardNumber} isSignedInByLink={isSignedInByLink} rows={rows} setRows={setRows} userId={userId} setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} token={token} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} />
+                        <ResponsiveAppBar selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} filteredRows={filteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} />
+                        <PanelV2 heliumHeaders={heliumHeaders} setHeliumHeaders={setHeliumHeaders} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} currentAppName={useParams().appName} filteredRows={filteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} cardNumber={cardNumber} setCardNumber={setCardNumber} isSignedInByLink={isSignedInByLink} rows={rows} userId={userId} setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} token={token} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} />
                         <SelectDialog handleClose={handleHeliumSelectorClose} open={heliumSelectorOpen} setOpen={setHeliumSelectorOpen} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} getSelectedLanguageString={getSelectedLanguageString} />
                     
                     </React.Fragment>
