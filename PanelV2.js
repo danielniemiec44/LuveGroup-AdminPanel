@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Typography, Paper, Box, TextField, Grid, Button, FormControl, OutlinedInput, FormHelperText, InputAdornment, Divider, Toolbar, ListItem, ListItemText, List, Drawer, TableContainer, Table, TableHead, TableRow, TableCell, Tab, TableBody } from "@mui/material";
 import { makeStyles, styled } from '@mui/styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -97,9 +97,11 @@ export default function PanelV2(props) {
   const [readyForRender, setReadyForRender] = useState(false);
 
     const passwordRef = useRef(null);
+
+    const [heliumTableBody, setHeliumTableBody] = useState(null);
     
     
-    const { rows, setRows, isSignedInByLink, userId, searchTags, setSearchTags } = props;
+    const { rows, isSignedInByLink, userId, searchTags, setSearchTags } = props;
 
     if(!sessionStorage.getItem("userId")) {
       window.location.href = "/";
@@ -135,6 +137,41 @@ export default function PanelV2(props) {
     }, [])
 
     const promises = useRef([]);
+
+
+    const generateHeliumTableBody = () => {
+      setHeliumTableBody(props.filteredRows.current?.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map((helium, index) => {
+        const resultValue = helium["RESULT"];
+    
+        return (
+          <TableRow key={index} style={{ background: resultValue === "Good" ? "rgba(0,128,0,0.9)" : resultValue === "Reject" ? "rgba(255,0,0,0.9)" : "rgba(0, 0, 0, 0.5)" }}>
+            {/*Object.keys(helium).map(columnName => (
+              (visibleRowsNames.current.includes(columnName) || columnName === "MachineName") && (
+                <TableCell key={columnName} className={`${classes.body}`}>{helium[columnName]?.toLocaleString()}</TableCell>
+              )
+              ))*/}
+    
+    <TableCell key={index} className={`${classes.body}`}>{helium["MachineName"]?.toLocaleString() || "Brak nazwy maszyny"}</TableCell>
+    
+              {props.heliumHeaders?.map((heliumHeader, index) => (
+                (visibleRowsNames.current.includes(heliumHeader)) && (
+                  <TableCell key={index} className={`${classes.body}`}>{helium[heliumHeader]?.toLocaleString() || <BlockIcon />}</TableCell>
+                )
+              ))}
+    
+            {/* If you have an actions column, you can include it here */}
+            {/* <TableCell>Actions for this row</TableCell> */}
+          </TableRow>
+        );
+      })
+      );
+    };
+
+
+    
+
+
+    
     
 
     
@@ -269,7 +306,7 @@ function setDateRange(dateStart, dateEnd) {
             response.json().then(data => {
                 //console.log(data);
                 if (data.result === "success") {
-                  setRows(data.leaks);
+                  rows.current = data.leaks;
                   //console.log("Data result length: " + data.leaks.length)
                   
                   setCurrentPage(0);
@@ -323,7 +360,7 @@ function setDateRange(dateStart, dateEnd) {
             response.json().then(data => {
                 //console.log(data);
                 if (data.result === "success") {
-                  setRows(data.orders);
+                  rows.current = data.orders;
                   //console.log("Data result length: " + data.orders.length)
                   
                   setCurrentPage(0);
@@ -468,8 +505,8 @@ const getPromises = () => {
     }
 
         props.showLoadingScreen();
-        setRows([]);
-        props.setFilteredRows([]);
+        rows.current = [];
+        props.filteredRows.current = [];
         tempHeliumHeaders.current = [];
         tempRows.current = [];
 
@@ -477,13 +514,17 @@ const getPromises = () => {
   
     
 
+        
 Promise.all(getPromises())
 .then(() => {
-  setRows(tempRows.current);
+  rows.current = tempRows.current;
+  
   props.setHeliumHeaders(tempHeliumHeaders.current);
   console.log("All machines parsed!");
   console.log("First row: " + tempRows.current[0]);
   tempHeliumHeaders.current = [];
+  tempRows.current = [];
+  //generateHeliumTableBody();
 })
 .catch((error) => {
   console.error("Error occurred while parsing machines:", error);
@@ -526,7 +567,7 @@ Promise.all(getPromises())
 
       if (searchTags?.length == 0) {
         console.log("All rows shown!");
-        filtered2 = rows.slice().reverse(); // Exclude the first row using slice(1)
+        filtered2 = rows.current.slice().reverse(); // Exclude the first row using slice(1)
       } else {
         const filtered = rows.filter((row) => {
           return searchTags.some((tag) => {
@@ -546,14 +587,14 @@ Promise.all(getPromises())
       });
 
       console.log("Filtered rows: ", filteredByDate)
-      props.setFilteredRows(filteredByDate);
+      props.filteredRows.current = filteredByDate;
 
 
     } else {
       //TODO: Zrobić też dla innych aplikacji
       if (searchTags?.length == 0) {
         console.log("All rows shown!");
-        props.setFilteredRows(rows); // Exclude the first row using slice(1)
+        props.filteredRows.current = rows; // Exclude the first row using slice(1)
       } else {
         const filtered = rows.filter((row, index) => {
           return Object.values(row).some((value) =>
@@ -561,7 +602,7 @@ Promise.all(getPromises())
           );
         });
   
-        props.setFilteredRows(filtered);
+        props.filteredRows.current = filtered;
     }
   }
 }
@@ -600,7 +641,7 @@ Promise.all(getPromises())
 
     <Grid container sx={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 5 }}>
 
-    {props.filteredRows.length > 0 && props.filteredRows.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(fix => (
+    {props.filteredRows.length > 0 && props.filteredRows?.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(fix => (
     <ExpandingRow
     fixData={fix}
     notify={(action, text) => { props.notify(action, text) }}
@@ -644,7 +685,7 @@ Promise.all(getPromises())
               </TableRow>
             </TableHead>
             <TableBody>
-              {props.filteredRows.length > 0 && props.filteredRows.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(order => (
+              {props.filteredRows.current.length > 0 && props.filteredRows.current.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(order => (
                 <TableRow style={{ background: "rgba(0, 0, 0, 0.5)" }}>
                   { columnOrder[appName].map(columnId => {
                     return <TableCell key={columnId} className={`${classes.body} ${tableCellClasses.body}`}>{ order[columnId]?.toLocaleString() }</TableCell>;
@@ -686,30 +727,7 @@ Promise.all(getPromises())
           </TableRow>
         </TableHead>
         <TableBody>
-  {props.filteredRows?.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map((helium, index) => {
-    const resultValue = helium["RESULT"];
-
-    return (
-      <TableRow key={index} style={{ background: resultValue === "Good" ? "rgba(0,128,0,0.9)" : resultValue === "Reject" ? "rgba(255,0,0,0.9)" : "rgba(0, 0, 0, 0.5)" }}>
-        {/*Object.keys(helium).map(columnName => (
-          (visibleRowsNames.current.includes(columnName) || columnName === "MachineName") && (
-            <TableCell key={columnName} className={`${classes.body}`}>{helium[columnName]?.toLocaleString()}</TableCell>
-          )
-          ))*/}
-
-<TableCell key={index} className={`${classes.body}`}>{helium["MachineName"]?.toLocaleString() || "Brak nazwy maszyny"}</TableCell>
-
-          {props.heliumHeaders?.map((heliumHeader, index) => (
-            (visibleRowsNames.current.includes(heliumHeader)) && (
-              <TableCell key={index} className={`${classes.body}`}>{helium[heliumHeader]?.toLocaleString() || <BlockIcon />}</TableCell>
-            )
-          ))}
-
-        {/* If you have an actions column, you can include it here */}
-        {/* <TableCell>Actions for this row</TableCell> */}
-      </TableRow>
-    );
-  })}
+  { heliumTableBody }
 </TableBody>
       </Table>
     </TableContainer>
