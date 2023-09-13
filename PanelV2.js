@@ -20,6 +20,7 @@ import { DensityLarge } from '@mui/icons-material';
 
 import BlockIcon from '@mui/icons-material/Block';
 import ReplyDialog from './ReplyDialog';
+import { FixedSizeList } from 'react-window';
 
 /*
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -929,7 +930,70 @@ return JSON.stringify({
 
 
   
-    
+  const RenderTableCell = ({ helium, columnId }) => {
+    let display = helium[columnId]?.toLocaleString();
+  
+    if (columnId === 0) {
+      display = display.split("\\")[1];
+      if (helium[columnId].includes("2023")) {
+        display += "_2023";
+      } else {
+        display += "_OLD";
+      }
+    }
+  
+    return (
+      <TableCell key={columnId} className={`${classes.body} ${tableCellClasses.body}`}>
+        {display}
+      </TableCell>
+    );
+  };
+  
+  const Row = React.memo(({ index, style }) => {
+    const helium = rows[index];
+    const resultValue = helium[9];
+    const background = (resultValue === "Good" || resultValue.includes("BUONO"))
+      ? "rgba(0,128,0,0.9)"
+      : (resultValue === "Reject" || resultValue.includes("ANOMALIA"))
+      ? "rgba(255,0,0,0.9)"
+      : "rgba(0, 0, 0, 0.5)";
+  
+    return (
+      <TableRow key={index} style={{ background }}>
+        {columnOrder[appName].map(columnId => (
+          <RenderTableCell helium={helium} columnId={columnId} />
+        ))}
+      </TableRow>
+    );
+  });
+  
+  const VirtualizedTable = () => {
+    const rowHeight = 48; // Adjust based on your design
+  
+    return (
+      <Table>
+        <TableHead>
+          <TableRow>
+            {columnOrder[appName].map(columnId => (
+              <TableCell key={columnId} className={`${classes.head} ${tableCellClasses.head}`}>
+                {extractedHeaders[columnId]}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <FixedSizeList
+            height={400} // Adjust based on your viewport size
+            itemCount={rows.length}
+            itemSize={rowHeight}
+            width="100%"
+          >
+            {Row}
+          </FixedSizeList>
+        </TableBody>
+      </Table>
+    );
+  };
 
 
   
@@ -1009,44 +1073,9 @@ return JSON.stringify({
     <React.Fragment>
   <Box style={{ position: "fixed", top: "200px", left: "15px", bottom: "15px", right: "15px", transition: 'top 0.4s ease-in-out' }} id="recordsPositioner">
     <TableContainer classes={{root: classes.customTableContainer}} id="recordsContainer">
-      <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            
-
-            { columnOrder[appName].map(columnId => {
-                  return <TableCell key={columnId} className={`${classes.head} ${tableCellClasses.head}`}>{extractedHeaders[columnId]}</TableCell>;
-                })}
-
-            
-            {/* If you want an additional column for actions, you can include it here */}
-            {/* <TableCell className={`${classes.head} ${tableCellClasses.head}`}>Actions</TableCell> */}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-  {/*props.rows?.map((helium, index) => {
-    const resultValue = helium[9];
-
-    return (
-      <TableRow key={index} style={{ background: (resultValue === "Good" || resultValue.includes("BUONO")) ? "rgba(0,128,0,0.9)" : (resultValue === "Reject" || resultValue.includes("ANOMALIA")) ? "rgba(255,0,0,0.9)" : "rgba(0, 0, 0, 0.5)" }}>
-        { columnOrder[appName].map(columnId => {
-          var display = [helium[columnId]?.toLocaleString()]
-          if(columnId == 0) {
-            display[0] = display[0].split("\\")[1]
-            if(helium[columnId].includes("2023")) {
-              display[1] = "2023"
-            } else {
-              display[1] = "OLD"
-            }
-          }
-          return <TableCell key={columnId} className={`${classes.body} ${tableCellClasses.body}`}>{ display.join("_") }</TableCell>;
-        })}
-
-      </TableRow>
-    );
-  })*/}
-</TableBody>
-      </Table>
+      {rows.length > 0 && (
+        <VirtualizedTable rowsData={rows} />
+      )}
     </TableContainer>
   </Box>
 </React.Fragment>
