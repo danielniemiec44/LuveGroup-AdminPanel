@@ -24,7 +24,7 @@ import TranslateIcon from '@mui/icons-material/Translate';
 import { navStyles } from './NavOption';
 import Nav from './Nav';
 import { useParams } from 'react-router-dom';
-import { headers } from './App';
+import { MyContext, headers } from './App';
 
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
@@ -32,7 +32,9 @@ function ResponsiveAppBar(props) {
   const classes = navStyles();
   const { appName } = useParams()
 
-  const { dateStart, setDateStart, dateEnd, setDateEnd, refreshData, setRefreshData, timeStart, timeEnd, pagesCount, setPagesCount, currentPage, setCurrentPage } = props;
+  const { dateStart, setDateStart, dateEnd, setDateEnd, refreshData, setRefreshData, timeStart, timeEnd } = props;
+
+  const { currentPage, pagesCount } = useContext(MyContext)
 
   const isLargeScreen = useMediaQuery('(min-width: 960px)');
   const [prevScrollPos, setPrevScrollPos] = React.useState(0);
@@ -63,18 +65,19 @@ function ResponsiveAppBar(props) {
 
 const handleScroll = (el) => {
   var positioner = document.getElementById("recordsPositioner");
-  if (el.scrollY <= 40 || el.scrollTop <= 40) {
+  console.log("Position: scrollY: " + el.scrollY + "px, scorllTop: " + el.scrollTop + "px");
+  if (el.scrollY == 0 || el.scrollTop == 0) {
     // User has scrolled to the top of the page
     console.log('User scrolled to the top!');
     setAppBarVisible(true);
     if(positioner != null) { 
-      positioner.style.top = "200px";
+      positioner.style.top = "170px";
     };
     // You can perform any desired action here
   } else {
     setAppBarVisible(false);
     if(positioner != null) {
-      positioner.style.top = "75px";
+      positioner.style.top = "70px";
     };
   }
 };
@@ -83,7 +86,7 @@ const handleScroll = (el) => {
     if(appBarVisible) {
       appBarRef.current.style.top = 0;
     } else {
-      appBarRef.current.style.top = "-120px";
+      appBarRef.current.style.top = "-70px";
     }
   }, [appBarVisible])
   
@@ -149,13 +152,13 @@ const handleScroll = (el) => {
 
   return (
     <React.Fragment>
-      <AppBar sx={{ background: "white", padding: 0, margin: 0, color: "white", height: 80, overflow: "visible", transition: 'top 0.4s ease-in-out' }} ref={appBarRef}>
+      <AppBar sx={{ background: "white", padding: 0, margin: 0, color: "white", height: 70, width: "100vw", overflow: "visible", transition: 'top 0.4s ease-in-out' }} ref={appBarRef}>
 
             <Toolbar disableGutters sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', padding: 0, margin: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', margin: 0, background: "rgba(0, 60, 122, 1)", flexGrow: 1 }}>
             <img onClick={() => {window.location.href = "/"}} src={logo} style={{ height: "100%" }} />
-            <Typography sx={{ marginLeft: '10px', padding: 2, margin: 0, fontSize: "clamp(5px, 5vw, 20px)", whiteSpace: "nowrap" }}>
-              { props.getSelectedLanguageString("appTitle") }
+            <Typography sx={{ margin: 0, marginLeft: "20px", fontSize: "clamp(1.6vh, 2vh, 2.5vh)", whiteSpace: "nowrap", overflow: "hidden" }}>
+              Panel Sest LU-VE – { appName ? appName : "Wybierz aplikację" }
             </Typography>
             
           </Box>
@@ -199,8 +202,9 @@ const handleScroll = (el) => {
           </Box>
         
           
+{/*
 
-          <Box display="flex" alignItems="center" padding={0} margin={0}>
+<Box display="flex" alignItems="center" padding={0} margin={0}>
             <List sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: 0, margin: 0, color: "black" }}>
               <ListItem component="div" style={{ padding: 0, margin: 0 }}>
                 <NavOption
@@ -220,16 +224,18 @@ const handleScroll = (el) => {
               </ListItem>
             </List>
           </Box>
+
+
+        */}
+          
           </React.Fragment>
           )}
         </Toolbar>
         
-        <div style={{ position: "absolute", background: "red", top: 80, height: 35, width: "100%", overflow: "visible", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "clamp(5px, 2.5vw, 15px)", padding: 5, boxSizing: "border-box" }}>
-        { props.getSelectedLanguageString("appUnderDevelopment") }
-          </div>
+        
           {props.showNav == true && (
-            <div style={{ position: "absolute", background: "red", width: "100%", overflow: "visible", marginTop: 115, textAlign: "center" }}>
-            <Nav selectedHeliumMachinesId={props.selectedHeliumMachinesId} availableHeliumMachines={props.selectedHeliumMachinesId} appName={appName} heliumSelectorOpen={props.heliumSelectorOpen} setHeliumSelectorOpen={props.setHeliumSelectorOpen} headers={headers[appName]} filteredRows={props.filteredRows} setFilteredRows={props.setFilteredRows} isSearching={props.isSearching} setIsSearching={props.setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} selectedLanguage={props.selectedLanguage} refreshData={refreshData} setRefreshData={setRefreshData} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            <div style={{ position: "absolute", background: "red", width: "100%", overflow: "visible", marginTop: 70, textAlign: "center" }}>
+            <Nav editModalState={props.editModalState} setEditModalState={props.setEditModalState} selectedHeliumMachinesId={props.selectedHeliumMachinesId} availableHeliumMachines={props.selectedHeliumMachinesId} appName={appName} selectorOpen={props.selectorOpen} setSelectorOpen={props.setSelectorOpen} headers={headers[appName]} isSearching={props.isSearching} setIsSearching={props.setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} selectedLanguage={props.selectedLanguage} refreshData={refreshData} setRefreshData={setRefreshData} />
           </div>
           )}
           

@@ -6,12 +6,14 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { Checkbox, Divider, FormControlLabel, Grid, Table, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { columnOrder, dateTimeHeaders, headers, switches } from './App';
+import { columnOrder, dateTimeHeaders, disabledHeaders, editModalcolumnOrder, headers, numberHeaders, requiredFields, switches } from './App';
 import { Box } from '@mui/system';
 import { CheckBox } from '@mui/icons-material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import SaveAsSharpIcon from '@mui/icons-material/SaveAsSharp';
+import { denyAccess } from './PanelV2';
+import { booleanHeaders } from './App';
 
 export default function EditModal(props) {
   const { editModalState, setEditModalState} = props
@@ -22,12 +24,14 @@ export default function EditModal(props) {
   const rowData = React.useRef([]);
   const [newRowData, setNewRowData] = React.useState([]);
 
-
   React.useEffect(() => {
     if(editModalState != null) {
-        rowData.current = props.filteredRows.find(record => record[0] === editModalState);
-        setNewRowData([]);
-        
+      if(editModalState == -1) {
+        rowData.current = [];
+      } else {
+        rowData.current = props.rows.find(record => record[0] === editModalState);
+      }
+      setNewRowData([]);
     }
   }, [editModalState])
 
@@ -69,7 +73,27 @@ export default function EditModal(props) {
             updatedArray[columnId] = inputValue;
           }
         }
-      
+        if(props.appName == "WoodApp") {
+          if(columnId == 6 || columnId == 3) {
+            var kgcost = rowData.current[6]
+            if(updatedArray[6] != null) {
+              kgcost = updatedArray[6]
+            }
+            var weight = rowData.current[3]
+            if(updatedArray[3] != null) {
+              weight = updatedArray[3]
+            }
+
+            var netcost = kgcost * weight
+            var grossCost = Math.round((netcost * 1.23) * 100) / 100
+
+            document.getElementById("columnId-8").value = netcost
+            updatedArray[8] = netcost
+
+            document.getElementById("columnId-9").value = grossCost
+            updatedArray[9] = grossCost
+          }
+        }
       
     }
 
@@ -83,6 +107,9 @@ export default function EditModal(props) {
 
 
   function parseDate(date) {
+    if(date == null) {
+      return null;
+    }
     const parsedDate = new Date(date);
     if (isNaN(parsedDate)) {
       return date; // Return the original input if it's not a valid date
@@ -96,6 +123,76 @@ export default function EditModal(props) {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   }
 
+
+
+  function saveChanges(deleteRow) {
+    var jsonBody = JSON.stringify({
+      'token': props.token,
+      'recordId': editModalState,
+      'newData': newRowData,
+  })
+
+    if(deleteRow) {
+      if(!window.confirm('Uwaga! Czy na pewno chcesz usunąć ten wpis?')){
+        return;
+      } else {
+          jsonBody = JSON.stringify({
+            'token': props.token,
+            'recordId': editModalState,
+            'deleteRow': true
+        })
+    }
+      } else {
+        if(editModalState === -1) {
+          for(var i = 0; i < newRowData.length; i++) {
+            if(i in booleanHeaders[props.appName]) {
+              if(newRowData[i] == null) {
+                newRowData[i] = booleanHeaders[props.appName][i];
+            }
+          }
+          jsonBody = JSON.stringify({
+            'token': props.token,
+            'recordId': "new",
+            'data': newRowData
+        })
+        }
+      }
+    }
+
+    console.log("Saving changes...")
+    props.showLoadingScreen();
+
+    fetch("/api/update_woodapp", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: jsonBody
+  }).then(response => {
+      response.json().then(data => {
+          //console.log(data);
+          if (data.result === "success") {
+            setEditModalState(null);
+            props.notify("success", "Udało się zapisać zmiany!")
+            
+          } else if((data.result === "error")) {
+            props.notify("error", data.message)
+          }
+      }).catch(error => {
+        console.error(error);
+      props.notify("error", "contact")
+      })
+  }).catch(error => {
+      console.error(error);
+      props.notify("error", "contact")
+  }).finally(() => {
+    props.hideLoadingScreen();
+});
+
+    
+    
+    
+  }
   
 
   return (
@@ -108,8 +205,9 @@ export default function EditModal(props) {
         fullWidth
         maxWidth="lg"
       >
+        <form onSubmit={(event) => { event.preventDefault(); saveChanges() }}>
         <DialogTitle id="alert-dialog-title" textAlign={"center"} fontSize={"1.5rem"}>
-          Edytuj rekord ({ editModalState != null && rowData && rowData.current && rowData.current[0] }):
+           { editModalState != null && rowData && rowData.current && (editModalState != -1 ? <div>Edytuj rekord ({rowData.current[0] }):</div> : <div>Dodaj rekord:</div>)}
         </DialogTitle>
         <Divider />
         
@@ -124,7 +222,7 @@ export default function EditModal(props) {
           { props.appName == "WoodApp" && (
             <DialogContentText id="alert-dialog-description">
             <Grid container style={{ width: "100%", color: "black" }}>
-                { columnOrder[props.appName].map(columnId => {
+                { editModalcolumnOrder[props.appName].map(columnId => {
                     if(columnId != 0) {
                   return (
                     <React.Fragment>
@@ -141,12 +239,14 @@ export default function EditModal(props) {
                         InputLabelProps={{
                           shrink: true,
                         }}
-                        defaultValue={rowData.current[columnId] && parseDate(rowData.current[columnId])}
+                        defaultValue={rowData.current?.[columnId] && parseDate(rowData.current[columnId])}
+                        
+
                         onChange={(event) => handleChange(event, columnId)}
                       />
                     ) : (
                         editModalState != null && (
-                            rowData.current && (typeof rowData.current[columnId] === 'boolean') ? (
+                          (columnId in booleanHeaders[props.appName]) ? (
                               <Checkbox
                               color="primary"
                               defaultChecked={rowData.current[columnId]}
@@ -172,8 +272,18 @@ export default function EditModal(props) {
                               ) : (
                                 <TextField
                                   fullWidth
+                                  type={numberHeaders[props.appName].includes(columnId) ? "number" : "text"}
+                                  disabled={disabledHeaders[props.appName].includes(columnId)}
+                                  InputLabelProps={{
+                                    shrink: true,
+                                  }}
+                                  inputProps={{
+                                    maxLength: 10,
+                                    step: "0.01"
+                                  }}
                                   defaultValue={rowData.current && rowData.current[columnId]}
                                   onChange={(event) => handleChange(event, columnId)}
+                                  id={"columnId-" + columnId}
                                 />
                               )
                                 
@@ -188,7 +298,7 @@ export default function EditModal(props) {
                   </Grid>
                   
                     <Grid item xs={2} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {((rowData.current[columnId] == null && newRowData[columnId] == null) || newRowData[columnId] == '.') && (
+                    {(((rowData.current == null ||rowData.current[columnId] == null) && (newRowData == null || newRowData[columnId] == null)) || (newRowData[columnId] != null && newRowData[columnId] == '.')) && !(columnId in booleanHeaders[props.appName]) && requiredFields[props.appName].includes(columnId) && (
                       <ErrorOutlineIcon fontSize='large' sx={{ color: "red" }} />
                     )}
 
@@ -221,13 +331,14 @@ export default function EditModal(props) {
 
 
         <DialogActions style={{ justifyContent: "space-between" }}>
-        <Button onClick={ () => { setEditModalState(null) }} size='medium' color='error' variant='outlined'>Trwale usuń rekord</Button>
+        {(editModalState != null && editModalState != -1) ? (<Button onClick={ () => { saveChanges(true) }} size='medium' color='error' variant='outlined'>Trwale usuń rekord</Button>) : <div></div>}
          
         <DialogActions>
           <Button onClick={ () => { setEditModalState(null) }} size='large' variant='outlined'>Anuluj</Button>
-          <Button onClick={() => { setEditModalState(null) }} size='large' variant='contained'>Zapisz zmiany</Button>
+          <Button type='submit' size='large' variant='contained'>Zapisz zmiany</Button>
           </DialogActions>
         </DialogActions>
+        </form>
       </Dialog>
     </div>
   );

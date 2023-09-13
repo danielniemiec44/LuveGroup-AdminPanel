@@ -25,6 +25,7 @@ import { navStyles } from './NavOption';
 import Nav from './Nav';
 import NoSpacingGrid from './NoSpacingGrid';
 import { useNavigate } from 'react-router-dom';
+import { MyContext } from './App';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -37,6 +38,7 @@ const useStyles = makeStyles((theme) => ({
 
 
 export default function AppSelector(props) {
+    const {carsPerms, setCarsPerms } = useContext(MyContext);
 
    
     const classes = useStyles();
@@ -50,9 +52,9 @@ export default function AppSelector(props) {
             {props.getSelectedLanguageString("appSelectorTitle")}
         </Typography>
         
-        <Grid container spacing={5} sx={{ padding: 3 }}>
-            <Grid item xs={12} sm={6} md={4}>
-                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/Leaks" }} className={classes.appPicker} disabled={props.leaksPerms == 0}>
+        <Grid container spacing={5} sx={{ padding: 3, display: "flex", justifyContent: "center" }}>
+            <Grid item xs={12} sm={6} md={3}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/Leaks" }} className={classes.appPicker} disabled={(!props.leaksPerms > 0)}>
                     <Grid container spacing={1}>
                         <Grid item xs={12}>
                 Leaks
@@ -64,8 +66,8 @@ export default function AppSelector(props) {
                 </Button>
                 
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/WoodApp" }} className={classes.appPicker} disabled={props.woodappPerms == 0}>
+            <Grid item xs={12} sm={6} md={3}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/WoodApp" }} className={classes.appPicker} disabled={(!props.woodAppPerms > 0)}>
                     <Grid container spacing={1}>
                         <Grid item xs={12}>
                 WoodApp
@@ -77,14 +79,27 @@ export default function AppSelector(props) {
                 </Button>
                 
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/HeliumTest" }} className={classes.appPicker} disabled={props.heliumPerms == 0}>
+            <Grid item xs={12} sm={6} md={3}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/HeliumTest" }} className={classes.appPicker} disabled={(!props.heliumPerms > 0)}>
                     <Grid container spacing={1}>
                         <Grid item xs={12}>
                 HeliumTest
                 </Grid>
                 <Grid item xs={12}>
                     <Typography>Wyświetl i wyszukaj test helowy</Typography>
+                </Grid>
+                </Grid>
+                </Button>
+                
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+                <Button variant="contained" color="primary" onClick={() => { window.location.href = "/Cars" }} className={classes.appPicker} disabled={(!carsPerms > 0)}>
+                    <Grid container spacing={1}>
+                        <Grid item xs={12}>
+                Cars
+                </Grid>
+                <Grid item xs={12}>
+                    <Typography>Zarządzaj przejazdami służbowymi</Typography>
                 </Grid>
                 </Grid>
                 </Button>

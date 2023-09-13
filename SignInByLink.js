@@ -40,7 +40,7 @@ export default function SignInByLink(props) {
         props.showLoadingScreen();
         console.log("Attempt to login...");
 
-        fetch("/sign-in-by-link", {
+        fetch("/api/sign-in-by-link", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

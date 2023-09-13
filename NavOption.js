@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -9,13 +9,18 @@ import ruFlag from "./Flags/ru.jpg";
 import { PropaneSharp, RecentActorsOutlined } from '@mui/icons-material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
+import { FixedSizeList } from 'react-window';
+import { MyContext } from './App';
+
 export const navStyles = makeStyles((theme) => ({
   navList: {
     position: 'absolute',
     background: 'white',
     width: 300,
     zIndex: 1,
-    top: 50,
+    top: 60,
     left: 0,
     textAlign: 'center',
     display: 'flex',
@@ -77,6 +82,11 @@ export const navStyles = makeStyles((theme) => ({
 const NavOption = (props) => {
   const [open, setOpen] = useState(false);
   const listRef = useRef();
+  const {setExporting, currentPage, pagesCount, setCurrentPage} = useContext(MyContext)
+  const [expandUp, setExpandUp] = useState(false);
+  const [maxListHeight, setMaxListHeight] = useState(350)
+  const [maxListHeightUp, setMaxListHeightUp] = useState(350)
+  const [itemWidth, setItemWidth] = useState(0)
 
   const switchOpen = (index) => {
     if (index != null) {
@@ -128,7 +138,7 @@ const NavOption = (props) => {
       if (props.variant === "pagination") {
         console.log("Switched to: " + index)
         window.scrollTo({top: 0, behavior: 'smooth'});
-        props.setCurrentPage(index)
+        setCurrentPage(index)
         return;
       }
 
@@ -136,6 +146,7 @@ const NavOption = (props) => {
 
       props.setDate(newDate);
       console.log("Switched to: " + newDate);
+      return;
     }
     
 
@@ -148,10 +159,38 @@ const NavOption = (props) => {
     }
 
     if(props.variant == "openHeliumSelector") {
-      props.setHeliumSelectorOpen(true);
+      props.setSelectorOpen(props.appName);
     }
 
-    setOpen(!open);
+    if(props.variant == "previousPage") {
+      var newValue = currentPage - 1;
+      if(newValue >= 0) {
+        console.log("Clicked page switch: " + newValue)
+        setCurrentPage(newValue)
+      }
+    }
+
+    if(props.variant == "nextPage") {
+      var newValue = currentPage + 1;
+      if(newValue < pagesCount.current) {
+        console.log("Clicked page switch: " + newValue)
+        setCurrentPage(newValue)
+      }
+    }
+
+    if(props.variant == "add") {
+      props.setEditModalState(-1);
+    }
+
+    if(props.variant == "export") {
+      setExporting(true);
+    }
+
+
+    if(index == null && (props.variant == "pagination" || props.context == "from" || props.context == "to" || props.variant === "day" || props.variant === "month" || props.variant === "year" || props.variant === "hour" || props.variant === "minutes" || props.variant === "seconds")) {
+      setOpen(true);
+    }
+    
   };
 
   useEffect(() => {
@@ -176,13 +215,23 @@ const NavOption = (props) => {
   const classes = navStyles();
 
 
-  const getMaxHeight = () => {
+
+  useEffect(() => {
     const viewportHeight = window.innerHeight;
-    const buttonRect = listRef.current.getBoundingClientRect();
+    const buttonRect = listRef.current.getBoundingClientRect() || 0;
     const topOffset = buttonRect.top + buttonRect.height;
     const maxHeight = viewportHeight - topOffset - 10; // Adjust as needed
-    return maxHeight;
-  };
+    //setMaxListHeight(maxHeight);
+    //setMaxListHeightUp(300);
+
+
+
+    if(maxHeight < 200) {
+      setExpandUp(true)
+    } else {
+      setExpandUp(false)
+    }
+  }, [window.innerHeight,])
 
 
 
@@ -226,8 +275,9 @@ const NavOption = (props) => {
   }));
 
   const currentYear = new Date().getFullYear();
+  const range = currentYear - 2000 + 1; // add 1 because we want to include the current year in our range
 
-  const yearNavigationItems = Array.from(Array(currentYear - 2022), (_, index) => 2023 + index).map((year) => ({
+  const yearNavigationItems = Array.from(Array(range), (_, index) => 2000 + index).map((year) => ({
     id: `year-${year}`,
     label: new Date(year, 0).toLocaleString(props.selectedLanguage, { year: 'numeric' }),
   }));
@@ -250,7 +300,7 @@ const NavOption = (props) => {
 
   var c = 1;
 
-if(props.count != null) {
+if(props.count != null || props.count != undefined) {
   c = parseInt(props.count);
 }
 
@@ -261,24 +311,39 @@ if(props.count != null) {
   }));
 
 
+  const Row = ({ index, style }) => {
+    return (
+      <ListItem
+        button
+        onClick={() => { switchOpen(index) }}
+        key={index}
+        style={{ ...style, width: '100%' }}
+      >
+        <Typography style={{ flex: 1, textAlign: 'center' }}>{index + 1}</Typography>
+      </ListItem>
+    );
+  };
+
+
+
   return (
     <React.Fragment>
       <ListItem button onClick={() => { switchOpen(null) }} ref={listRef} className={
         classes.listItem
         } style={ props.autoWidth && ({width: 'auto'})}>
-        <ListItemText sx={props.variant == "translate" && ({margin: 3}) } primary={
-          (props.variant == "back" && (<div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}><ArrowBackIosIcon /> Powrót</div>))
+        <ListItemText sx={props.variant == "translate" && ({margin: 3})} style={{display: "flex", justifyContent: "center", alignItems: "center" }} primary={
+          (props.variant == "back" && (<div style={{ display: "flex", justifyContent: "center" }}><ArrowBackIcon /> Powrót</div>))
           || (
             <Box display="flex" alignItems="center" justifyContent="center" width="100%">
               <Typography style={{ flex: 1, textAlign: 'center' }}>{props.label}</Typography>
-              {props.variant != "name" && props.variant != "export" && props.variant != "refresh" && <ArrowDropDownIcon />}
+              {props.variant != "name" && props.variant != "export" && props.variant != "refresh" && props.variant != "previousPage" && props.variant != "add" && props.variant != "nextPage" && props.variant != "openHeliumSelector" && <ArrowDropDownIcon />}
             </Box>
           )
         } />
         
           
         {open && (
-          <div className={props.variant == "translate" ? (classes.navListLeft) : (classes.navList) } style={{ maxHeight: getMaxHeight()}}>
+          <div className={props.variant == "translate" ? (classes.navListLeft) : (classes.navList) } style={{ height: expandUp ? maxListHeightUp : maxListHeight, top: expandUp ? -maxListHeightUp : 60, width: 200}}>
               <List disablePadding style={{ width: '100%', overflowY: "auto" }}>
                 {props.variant == "translate" ? (
                   languages.map((item) => (
@@ -333,11 +398,14 @@ if(props.count != null) {
                               ) : (
 
                                 props.variant === 'pagination' ? (
-                                  paginationItems.map((item) => (
-                                    <ListItem button onClick={() => { switchOpen(item.index) }} key={item.id} style={{ width: '100%', }}>
-                                      <Typography style={{ flex: 1, textAlign: 'center' }}>{item.label}</Typography>
-                                    </ListItem>
-                                     ))
+                                  <FixedSizeList
+      height={expandUp ? maxListHeightUp : maxListHeight} // adjust this based on your viewport height
+      width="100%"
+      itemCount={props.count}
+      itemSize={40} // height of each item (adjust if needed)
+    >
+      {Row}
+    </FixedSizeList>
                                 ) : (
                                   props.variant === 'sort' ? (
                                     navigationItems.map((item) => (

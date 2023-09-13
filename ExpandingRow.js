@@ -132,7 +132,7 @@ export default function ExpandingRow(props) {
 
 
       function fetchActions() {
-        fetch("fetch_actions2", {
+        fetch("/api/fetch_actions2", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -217,19 +217,19 @@ export default function ExpandingRow(props) {
         <Typography>Czas logowania:</Typography>
         </Grid>
         <Grid item xs={6} sx={{ display: "flex", alignItems: "center" }}>
-        <Typography>{new Date(props.fixData[6]).toLocaleString()}</Typography>
+        <Typography>{new Date(props.fixData[6]).toUTCString()}</Typography>
         </Grid>
         <Grid item xs={6} sx={{ display: "flex", alignItems: "center" }}>
         <Typography>Czas rozpoczęcia naprawy:</Typography>
         </Grid>
         <Grid item xs={6} sx={{ display: "flex", alignItems: "center" }}>
-        <Typography>{new Date(props.fixData[7]).toLocaleString()}</Typography>
+        <Typography>{new Date(props.fixData[7]).toUTCString()}</Typography>
         </Grid>
         <Grid item xs={6} sx={{ display: "flex", alignItems: "center" }}>
         <Typography>Czas zakończenia naprawy:</Typography>
         </Grid>
         <Grid item xs={6} sx={{ display: "flex", alignItems: "center" }}>
-        <Typography sx={{ fontWeight: props.fixData[5] ? "normal" : "bold" }}>{props.fixData[5] ? new Date(props.fixData[5]).toLocaleString() : (<div>Brak</div>)}</Typography>
+        <Typography sx={{ fontWeight: props.fixData[5] ? "normal" : "bold" }}>{props.fixData[5] ? new Date(props.fixData[5]).toUTCString() : (<div>Brak</div>)}</Typography>
         </Grid>
     </Grid>
 </div>
@@ -340,12 +340,12 @@ export default function ExpandingRow(props) {
               <TableCell>{action[2]}</TableCell>
               <TableCell>{action[5]}</TableCell>
               <TableCell>{action[6]}</TableCell>
-              <TableCell>{new Date(action[3]).toLocaleString()}</TableCell>
+              <TableCell>{new Date(action[3]).toUTCString()}</TableCell>
               <TableCell>
                 {action[4] == null ? (
                   <b>W TRAKCIE NAPRAWY</b>
                 ) : (
-                  new Date(action[4]).toLocaleString()
+                  new Date(action[4]).toUTCString()
                 )}
               </TableCell>
             </TableRow>
@@ -360,7 +360,7 @@ export default function ExpandingRow(props) {
 
 <Grid item md={8} xs={12} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
     { canFix ? (
-      <Button variant="contained" size="large" disabled={pending} onClick={ () => { window.location.href = "http://10.2.2.238:3001/take_fix/" + props.cardNumber + "/" + props.fixData[0] } }>Podejmij się tej naprawy</Button>
+      <Button variant="contained" size="large" disabled={pending} onClick={ () => { window.location.href =  process.env.REACT_APP_FOR_LEAKS_URL + "/take_fix/" + props.cardNumber + "/" + props.fixData[0] } }>Podejmij się tej naprawy</Button>
     ) : (
       <Alert sx={{ display: "flex", alignItems: "center", justifyContent: 'center' }} severity='error'>
         <Typography variant="h6">W tym momencie nie możesz podjąć się tej naprawy</Typography>

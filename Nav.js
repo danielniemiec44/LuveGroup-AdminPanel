@@ -12,7 +12,7 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import logo from "./logo.jpg"
 import { Link } from 'react-router-dom';
-import { Alert, Chip, CircularProgress, Divider, Drawer, Grid, InputAdornment, List, ListItem, ListItemText, Paper, TextField } from '@mui/material';
+import { Alert, Chip, CircularProgress, Divider, Drawer, Grid, Hidden, InputAdornment, List, ListItem, ListItemText, Paper, TextField } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 
 import { createContext, useContext } from 'react';
@@ -20,18 +20,17 @@ import { createContext, useContext } from 'react';
 
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import FadeMenu from './FadeMenu';
 import NavOption from './NavOption';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { dark } from '@mui/material/styles/createPalette';
-
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 import { useEffect, useState, useRef } from 'react';
 import { CSVLink } from 'react-csv';
 import SearchIcon from '@mui/icons-material/Search';
 
 import SquareButton from './SquareButton';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { MyContext } from './App';
+
+
 
 
 
@@ -65,7 +64,6 @@ export const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   listItem: {
-    //width: 100,
     display: 'inline-flex',
     boxSizing: 'border-box',
     height: "100%"
@@ -179,7 +177,6 @@ export default function Nav(props) {
 
     const closeCalendarRef = useRef();
 
-    const { pagesCount, setPagesCount, currentPage, setCurrentPage } = props;
 
     const [manualSelection, setManualSelection] = React.useState(true);
 
@@ -188,7 +185,7 @@ export default function Nav(props) {
     const { rows, setRows } = props;
     const searchInputRef = useRef(null);
 
-    const [exporting, setExporting] = useState("")
+    //const [exporting, setExporting] = useState("")
 
     const { searchTags, setSearchTags } = props;
 
@@ -198,11 +195,21 @@ export default function Nav(props) {
     const adornmentRef = useRef(null);
     const [adornmentWidth, setAdornmentWidth] = useState(0);
 
+    const {pagesCount} = useContext(MyContext)
+
+    
+
+    
+    
+    
+
+    /*
     useEffect(() => {
       setTimeout(() => {
         setExporting("Żadne dane nie zostały załadowane!")
       }, 1000)
     }, [exporting])
+*/
 
     /*
     const getCalendarVisibleMonth = () => {
@@ -286,6 +293,24 @@ export default function Nav(props) {
         }
       };
 
+/*
+      const handlePageTextFieldValueChange = (event) => {
+        useEffect(() => {
+          var value = event.target.value;
+        console.log("Page textfield got: " + value)
+        setPageTextFieldValue(value)
+
+        if(value < 1 || value > pagesCount){
+          setPageTextFieldCorrect(false)
+        }else{
+          setPageTextFieldCorrect(true)
+        }
+        })
+        
+      }
+*/
+
+
 
 
   React.useEffect(() => {
@@ -294,8 +319,7 @@ export default function Nav(props) {
         calendarSelection[0]
         calendarSelection[1] = new Date(selectToDate).getDate();
       }
-      */ 
-
+      */
     window.addEventListener("mouseup", handleMouseUp);
 
 
@@ -344,9 +368,16 @@ export default function Nav(props) {
 
         const handleClickOutside = (event) => {
           //console.log(calendarButtonRef.current.contains(event.target))
+
+          
+
           if (!((calendarRef.current && timeRef.current) && event && (calendarRef.current.contains(event.target) || timeRef.current.contains(event.target))) || (closeCalendarRef.current && closeCalendarRef.current.contains(event.target))) {
-      
-            
+            console.log("Event target contains calendarRef: " + calendarRef.current?.contains(event.target))
+            console.log("Event target contains timeRef: " + timeRef.current?.contains(event.target))
+            console.log("Event target contains closeCalendarRef: " + closeCalendarRef.current?.contains(event.target))
+
+
+
             if(calendarOpen) {
               if(dateStart !== selectFromDate || dateEnd !== selectToDate) {
                 setDateStart(selectFromDate);
@@ -397,7 +428,7 @@ export default function Nav(props) {
       setCalendarSelection([start, end])
       
 
-
+      
 
       
 
@@ -407,6 +438,7 @@ export default function Nav(props) {
       handleWindowResize();
 
 
+      
 
         window.addEventListener('click', handleClickOutside);
         return () => {
@@ -416,6 +448,12 @@ export default function Nav(props) {
   }, [selectFromDate, selectToDate, calendarOpen, calendarVisibleMonth])
 
 
+
+  useEffect(() => {
+    if(props.appName == "HeliumTest") {
+      setSelectFromDate(new Date(2000, 0, 1))
+    }
+  }, [])
 
 
   const handleWindowResize = (event) => {
@@ -456,7 +494,7 @@ export default function Nav(props) {
   };
 
   const handleInputKeyPress = (event) => {
-    if (!event || [' ', 'Enter'].includes(event.key)) {
+    if (!event || ['Enter'].includes(event.key)) {
       const newTag = inputValue.trim();
       if (newTag) {
         setSearchTags([...searchTags, newTag]);
@@ -492,9 +530,9 @@ export default function Nav(props) {
         <Paper
           className={classes.drawer}
         >
-          
+          <Hidden smDown>
           <NavOption variant="back" autoWidth />
-            
+          
 
            
 
@@ -506,7 +544,7 @@ export default function Nav(props) {
 
 
          
-         <List className={classes.list} style={{ display: "flex", flex: 1 }}>
+         <List className={classes.list} style={{ display: "flex", flex: 0, alignItems: "center", justifyContent: "center" }}>
 
          
             
@@ -527,27 +565,44 @@ export default function Nav(props) {
             
 
 
-            {props.appName == "HeliumTest" && (
-              <NavOption variant="openHeliumSelector" label={"Wybierz helownice"} autoWidth setHeliumSelectorOpen={props.setHeliumSelectorOpen} />
+            {(props.appName == "HeliumTest") && (
+              <NavOption variant="openHeliumSelector" label="Wybierz helownice" autoWidth setSelectorOpen={() => { props.setSelectorOpen(props.appName) }} />
             )}
 
-            <NavOption variant="pagination" label={`Strona: ${currentPage + 1}/${pagesCount}`} count={pagesCount} setCurrentPage={setCurrentPage} />
+              
 
+
+
+            
+
+{/*
              <CSVLink data={exporting} filename={'Export.csv'} separator=";" headers={ props.headers } onClick={
               () => {
-                setExporting(props.filteredRows);
+                //if(props.appName == "HeliumTest") {
+                  setExporting(props.rows);
+                //} else {
+                 // setExporting(props.filteredRows);
+                //}
               }
+
+              
             }>
-              <NavOption variant="export" label="Exportuj do CSV" autoWidth />
+              { props.appName == "HeliumTest" ? <NavOption variant="export" label="Widoczna strona do CSV" autoWidth /> : <NavOption variant="export" label="Exportuj do CSV" autoWidth />}
             </CSVLink>
+          */}
             
+            <NavOption variant="export" label="Exportuj" autoWidth  />
+
+            { props.appName == "WoodApp" ? <NavOption editModalState={props.editModalState} setEditModalState={props.setEditModalState} variant="add" autoWidth label={(<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between"}}><AddCircleOutlineIcon sx={{margin: 1 }} /> <div>Dodaj wpis</div></div>)} /> : null }
             
-            
-            
+
+
+
           </List>
+          </Hidden>
 
 
-          <ListItem className={classes.listItemLong} button ref={calendarButtonRef} sx={{ flex: 2 }}>
+          <ListItem className={classes.listItemLong} button ref={calendarButtonRef} sx={{ flex: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
             
               <ListItemText primary={(
                 <Box display="flex" alignItems="center" justifyContent="center">
@@ -565,6 +620,7 @@ export default function Nav(props) {
               
             </ListItem>
 
+            <Hidden smDown>
           <Box sx={{ display: "flex", alignItems: 'center', justifyContent: 'center', ml: 1, mr: 1, flex: 1, justifyContent: 'flex-end' }}>
                   <form style={{ display: "flex", justifyContent: 'space-between' }} onSubmit={(event) => {
                     //props.setSearchValue(searchTags);
@@ -586,6 +642,7 @@ export default function Nav(props) {
                     onChange={handleInputChange}
                     onKeyPress={handleInputKeyPress}
                     style={{ }}
+                    placeholder='Wciśnij Enter'
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start" ref={adornmentRef}>
@@ -607,16 +664,18 @@ export default function Nav(props) {
                   
 
                   <SquareButton type="button" onClick={ () => { handleInputKeyPress(null) }} size="50" variant='contained'>
-                    { props.isSearching ? (
+                    { /*props.isSearching ? (
                       <CircularProgress size={20} color="inherit" disableShrink />
                     ) : (
                       <SearchIcon fontSize='large' />
-                    ) }
+                    ) */}
+                    <SearchIcon fontSize='large' />
                   
                   
                   </SquareButton>
                   </form>
                 </Box>
+                </Hidden>
                 
           
         </Paper>

@@ -4,7 +4,6 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useRef } from 'react';
 import { useEffect, useState } from 'react';
-import LeakTable from './LeakTable';
 import {
   Button,
   Dialog,
@@ -44,7 +43,6 @@ export default function ReplyDialog(props) {
       open={props.open}
       //onClose={() => { props.handleClose(null) }}
       fullWidth
-      onClose={() => { setTextFieldValue(''); props.handleClose(null); }}
       PaperProps={{
         sx: {
           display: 'flex',
@@ -55,7 +53,10 @@ export default function ReplyDialog(props) {
       }}
     >
       <AppBar position="static">
-        <Toolbar>
+        <Toolbar style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="h6" component="div">
+          Zmień cenę drewna:
+          </Typography>
           <IconButton
             edge="start"
             color="inherit"
@@ -66,25 +67,29 @@ export default function ReplyDialog(props) {
           >
             <CloseIcon />
           </IconButton>
-          <Typography variant="h6" component="div">
-          { props.getSelectedLanguageString("addManuallyResponsiblePerson") }
-          </Typography>
         </Toolbar>
       </AppBar>
+      <form onSubmit={(event) => { event.preventDefault() }}>
       <Box sx={{ overflowY: 'auto', flexGrow: 1, p: 2 }}>
         <DialogContent>
           <TextField
-            label={ props.getSelectedLanguageString("responsiblePerson") }
+            label="Nowa cena drewna"
             onChange={handleTextFieldChange}
             fullWidth
+            type="number"
+            inputProps={{
+              min: 0,
+              step: 0.01
+            }}
           />
         </DialogContent>
       </Box>
       <DialogActions>
         <Button size="large" color="primary" onClick={ () => { props.handleClose(textFieldValue) }  } disabled={!allowed}>
-          { props.getSelectedLanguageString("apply") }
+          Zatwierdź
         </Button>
       </DialogActions>
+      </form>
     </Dialog>
   );
 }

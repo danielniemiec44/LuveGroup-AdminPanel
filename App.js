@@ -8,7 +8,7 @@ import LoadingOverlay from './LoadingOverlay';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from 'react-toastify';
 import Overlay from "./Overlay";
-import { Button, Grid, Paper, Stack, Typography } from "@mui/material";
+import { Button, Grid, Paper, Stack, Typography, useMediaQuery } from "@mui/material";
 import PanelV2 from "./PanelV2";
 import { createContext, useContext } from 'react';
 import SignIn from "./SignIn";
@@ -18,15 +18,19 @@ import SignInByLink from "./SignInByLink";
 
 import Wallpaper from "./Wallpaper";
 import SelectDialog from "./SelectDialog";
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import ToolBar from "./ToolBar";
 
 
 export var headers = {
   "Leaks": ["ID Naprawy", "Nieszczelności", "Osoby odpowiedzialne", "ID Pracownika", "Numer zamówienia", "Czas zakończenia", "Czas logowania", "Czas rozpoczęcia", "Stanowisko"],
-  "WoodApp": ["ID zamówienia", "ID pracownika", "Typ zamówienia", "Waga", "Zrealizowano", "Data zamówienia", "Cena za kg", "Data odebrania", "Cena netto", "Cena brutto", "Plant", "Imię", "Nazwisko"]
+  "WoodApp": ["ID zamówienia", "ID pracownika", "Typ zamówienia", "Waga", "Zrealizowano", "Data zamówienia", "Cena za kg", "Data odebrania", "Cena netto", "Cena brutto", "Plant", "Imię", "Nazwisko"],
+  "HeliumTest": ["machine_name", "ODP", "OPERATOR", "RECIPE", "DESCRIPTION", "CODE", "SERIAL", "POS", "DATE-TIME", "RESULT", "PRESSURE_G33H", "PRESSURE_G35H", "Anomaly", "G3_MEM"]
 };
 
 export const columnOrder = {
-  "WoodApp": [0, 1, 11, 12, 2, 6, 3, 8, 9, 5, 7, 4, 10]
+  "WoodApp": [0, 1, 11, 12, 2, 6, 3, 8, 9, 5, 7, 4, 10],
+  "HeliumTest": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 }
 
 
@@ -35,7 +39,9 @@ export const dateTimeHeaders = {
 }
 
 export const booleanHeaders = {
-  "WoodApp": [4]
+  "WoodApp": {
+    4: false
+  }
 }
 
 export const switches = {
@@ -44,7 +50,25 @@ export const switches = {
     2: ["wKawalkach", "wPaletach"]
   }
 }
-//TODO: Zrobic też dla Leaks
+
+export const numberHeaders = {
+  "WoodApp": [1, 3, 6, 8, 9]
+}
+
+export const disabledHeaders = {
+  "WoodApp": [8, 9]
+}
+
+export const requiredFields = {
+  "WoodApp": [1, 2, 3, 5, 6, 7, 10, 11, 12]
+}
+
+export const editModalcolumnOrder = {
+  "WoodApp": [0, 10, 6, 1, 3, 12, 8, 11, 9, 5, 7, 2, 4]
+}
+
+export const MyContext = React.createContext();
+
 
 
 
@@ -57,8 +81,19 @@ export default function App(props) {
   const [isSignedInByLink, setIsSignedInByLink] = useState("false");
 
   const [availableHeliumMachines, setAvailableHeliumMachines] = useState([]);
+  const [availableCars, setAvailableCars] = useState([]);
   const [selectedHeliumMachinesId, setSelectedHeliumMachinesId] = useState([]);
-  const [heliumSelectorOpen, setHeliumSelectorOpen] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(null);
+  const [editModalState, setEditModalState] = useState(null);
+  const [isPriceChangeWindowOpened, setIsPriceChangeWindowOpened] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [exportedCount, setExportedCount] = useState(0);
+  const [key, setKey] = useState(0)
+
+  
+const forceRerender = () => {
+  setKey(key + 1)
+}
   
 
 
@@ -97,20 +132,19 @@ export default function App(props) {
   const passwordRef = useRef(null);
 
 
-  const [selectedLanguage, setSelectedLanguage] = React.useState(localStorage.getItem('selectedLanguage') || "pl");
+  //const [selectedLanguage, setSelectedLanguage] = React.useState(localStorage.getItem('selectedLanguage') || "pl");
+  const [selectedLanguage, setSelectedLanguage] = React.useState("pl");
 
-  const lastUpdate = "05.07.2023 17:00";
+  const lastUpdate = "18.08.2023 12:00";
 
 
 
-  const [pagesCount, setPagesCount] = useState(0);
+  const pagesCount = useRef(0);
   const [currentPage, setCurrentPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
 
   
 
   const [rows, setRows] = useState([]);
-  const [filteredRows, setFilteredRows] = React.useState([]);
 
   const [heliumHeaders, setHeliumHeaders] = useState([]);
 
@@ -122,6 +156,12 @@ export default function App(props) {
   const [leaksPerms, setLeaksPerms] = useState(sessionStorage.getItem('leaks_perms'));
   const [woodAppPerms, setWoodAppPerms] = useState(sessionStorage.getItem('woodapp_perms'));
   const [heliumPerms, setHeliumPerms] = useState(sessionStorage.getItem('helium_perms'));
+  const [carsPerms, setCarsPerms] = useState(sessionStorage.getItem('cars_perms'));
+  const [selectedCar, setSelectedCar] = useState(null);
+
+  
+
+  
 
 
   
@@ -130,7 +170,6 @@ export default function App(props) {
 
   useEffect(() => {
     setRows([]);
-    setFilteredRows([]);
   }, []);
 
 
@@ -292,10 +331,6 @@ export default function App(props) {
     localStorage.setItem("selectedLanguage", selectedLanguage);
   }, [selectedLanguage]); // Add isComplete as a dependency
   
-  
-
-
-//TODO: Zrobic tak aby przy zmianie aplikacji nie pokazywaly sie rekordy z poprzednio wybranej aplikacji
  
 
 
@@ -321,6 +356,12 @@ const [dateStart, setDateStart] = React.useState(now2);
 const [refreshData, setRefreshData] = React.useState(false);
   
 
+
+useEffect(() => {
+  setInterval(() => {
+    //setRefreshData(true)
+  }, 2000)
+}, [])
 
 
   const showLoadingScreen = () => {
@@ -388,19 +429,27 @@ useEffect(() => {
 
   const handleHeliumSelectorClose = (event) => {
     if(selectedHeliumMachinesId.length != 0) {
-      setHeliumSelectorOpen(false);
+      setSelectorOpen("");
     }
   }
 
 
 
-
+  const theme = createTheme({
+    palette: {
+        mode: 'light',
+    },
+  });
+  const matches = useMediaQuery(theme?.breakpoints?.up('md')); // 'md' is for medium screens and up
 
 
 return (
+  
+  <MyContext.Provider value={{exporting, setExporting, exportedCount, setExportedCount, carsPerms, setCarsPerms, selectedCar, setSelectedCar, currentPage, pagesCount, forceRerender, setCurrentPage}}>
+    <ThemeProvider theme={theme}>
   <Box>
     
-  <Box component="main" style={{ paddingTop: 150 }}>
+  <Box component="main" style={{ paddingTop: matches ? 100 : 70, paddingBottom: 100 }} key={key}>
     <LoadingOverlay loading={loading} getSelectedLanguageString={getSelectedLanguageString} />
       {contactErrorInfo && (
         <Overlay>
@@ -431,7 +480,7 @@ return (
               <Routes>
                   <Route exact path="/" element={
                     <React.Fragment>
-                    <ResponsiveAppBar filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav="false" />
+                    <ResponsiveAppBar  isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav="false" />
                     { token && name && surname && userId ? (
                       <AppSelector leaksPerms={leaksPerms} setLeaksPerms={setLeaksPerms} woodAppPerms={woodAppPerms} setWoodAppPerms={setWoodAppPerms} heliumPerms={heliumPerms} setHeliumPerms={setHeliumPerms} getSelectedLanguageString={getSelectedLanguageString} />
                       ) : (
@@ -444,7 +493,7 @@ return (
 
                   <Route path="/Leaks/signIn/:cardNumber" element={
                       <React.Fragment>
-                        <ResponsiveAppBar filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} showNav="false" />
+                        <ResponsiveAppBar isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} showNav="false" />
                         <SignInByLink cardNumber={cardNumber} setCardNumber={setCardNumber} isSignedInByLink={isSignedInByLink} setIsSignedInByLink={setIsSignedInByLink} userId={userId} setUserId={handleUserIdChange} name={name} setName={setName} surname={surname} setSurname={setSurname} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} getSelectedLanguageString={getSelectedLanguageString} selectedLanguage={selectedLanguage} token={token} setToken={setToken} />
                     </React.Fragment>
                     } />
@@ -452,15 +501,19 @@ return (
 
 
                     <Route path="/:appName" element={
+                      
                       <React.Fragment>
                          
                         <Wallpaper />
-                        <ResponsiveAppBar selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} />
-                        <PanelV2 heliumHeaders={heliumHeaders} setHeliumHeaders={setHeliumHeaders} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} currentAppName={useParams().appName} filteredRows={filteredRows} setFilteredRows={setFilteredRows} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} cardNumber={cardNumber} setCardNumber={setCardNumber} isSignedInByLink={isSignedInByLink} rows={rows} setRows={setRows} userId={userId} setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} token={token} pagesCount={pagesCount} setPagesCount={setPagesCount} currentPage={currentPage} setCurrentPage={setCurrentPage} rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage} />
-                        <SelectDialog handleClose={handleHeliumSelectorClose} open={heliumSelectorOpen} setOpen={setHeliumSelectorOpen} heliumSelectorOpen={heliumSelectorOpen} setHeliumSelectorOpen={setHeliumSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} getSelectedLanguageString={getSelectedLanguageString} />
-                    
+                        <ResponsiveAppBar isPriceChangeWindowOpened={isPriceChangeWindowOpened} setIsPriceChangeWindowOpened={setIsPriceChangeWindowOpened} editModalState={editModalState} setEditModalState={setEditModalState} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectorOpen={selectorOpen} setSelectorOpen={setSelectorOpen} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} rows={rows} setRows={setRows} userId={userId} name={name} surname={surname} dateLabel={dateLabel} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} getSelectedLanguageString={getSelectedLanguageString} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} showNav={true}  />
+                        <PanelV2 pagesCount={pagesCount} availableCars={availableCars} setAvailableCars={setAvailableCars} isPriceChangeWindowOpened={isPriceChangeWindowOpened} setIsPriceChangeWindowOpened={setIsPriceChangeWindowOpened} editModalState={editModalState} setEditModalState={setEditModalState} heliumHeaders={heliumHeaders} setHeliumHeaders={setHeliumHeaders} selectorOpen={selectorOpen} setSelectorOpen={setSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} currentAppName={useParams().appName} isSearching={isSearching} setIsSearching={setIsSearching} searchTags={searchTags} setSearchTags={setSearchTags} cardNumber={cardNumber} setCardNumber={setCardNumber} isSignedInByLink={isSignedInByLink} rows={rows} setRows={setRows} userId={userId} setUserId={handleUserIdChange} setName={setName} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} dateStart={dateStart} setDateStart={setDateStart} dateEnd={dateEnd} setDateEnd={setDateEnd} refreshData={refreshData} setRefreshData={setRefreshData} token={token}  />
+                        <SelectDialog selectedCar={selectedCar} setSelectedCar={setSelectedCar} availableCars={availableCars} setAvailableCars={setAvailableCars} handleClose={handleHeliumSelectorClose} open={selectorOpen} setOpen={setSelectorOpen} selectorOpen={selectorOpen} setSelectorOpen={setSelectorOpen} availableHeliumMachines={availableHeliumMachines} setAvailableHeliumMachines={setAvailableHeliumMachines} selectedHeliumMachinesId={selectedHeliumMachinesId} setSelectedHeliumMachinesId={setSelectedHeliumMachinesId} getSelectedLanguageString={getSelectedLanguageString} />
+                        <ToolBar />
+
                     </React.Fragment>
+                    
                   }>
+                  
                     </Route>
 
 
@@ -469,12 +522,16 @@ return (
           </Router>
           
           </Box>
+          
 
 
           
        
 
           </Box>
+          </ThemeProvider>
+          </MyContext.Provider>
+          
 
 )
 }

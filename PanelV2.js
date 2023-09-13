@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useContext } from 'react';
 import { Typography, Paper, Box, TextField, Grid, Button, FormControl, OutlinedInput, FormHelperText, InputAdornment, Divider, Toolbar, ListItem, ListItemText, List, Drawer, TableContainer, Table, TableHead, TableRow, TableCell, Tab, TableBody } from "@mui/material";
 import { makeStyles, styled } from '@mui/styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -13,12 +13,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 
 import { textAlign } from '@mui/system';
-import { columnOrder, headers } from './App';
+import { MyContext, columnOrder, headers } from './App';
 import EditModal from './EditModal';
 import Papa from 'papaparse';
 import { DensityLarge } from '@mui/icons-material';
 
 import BlockIcon from '@mui/icons-material/Block';
+import ReplyDialog from './ReplyDialog';
 
 /*
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -90,16 +91,21 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+export const denyAccess = (message) => {
+  alert("Error: " + message);
+  window.location.href = "/";
+}
+
 export default function PanelV2(props) {
-  const [editModalState, setEditModalState] = useState(null);
   const { appName } = useParams()
+  const prevSelectorOpenRef = useRef();
 
   const [readyForRender, setReadyForRender] = useState(false);
 
     const passwordRef = useRef(null);
     
     
-    const { rows, setRows, isSignedInByLink, userId, searchTags, setSearchTags } = props;
+    const { rows, setRows, isSignedInByLink, userId, searchTags, setSearchTags, editModalState, setEditModalState } = props;
 
     if(!sessionStorage.getItem("userId")) {
       window.location.href = "/";
@@ -109,7 +115,7 @@ export default function PanelV2(props) {
 
     const [password, setPassword] = React.useState("");
 
-    const { dateStart, setDateStart, dateEnd, setDateEnd, refreshData, setRefreshData, pagesCount, setPagesCount, currentPage, setCurrentPage, rowsPerPage, setRowsPerPage } = props;
+    const { dateStart, setDateStart, dateEnd, setDateEnd, refreshData, setRefreshData, setRowsPerPage } = props;
     
  
 
@@ -131,10 +137,40 @@ export default function PanelV2(props) {
     useEffect(() => {
       if(appName == "HeliumTest") {
         setDateStart(new Date(2000, 0, 1))
+        
       }
     }, [])
 
     const promises = useRef([]);
+
+    const {exporting, setExporting, setExportedCount, currentPage, pagesCount, setCurrentPage} = useContext(MyContext)
+
+    const chunks = useRef([]);
+
+    const tempRow = useRef("");
+
+
+    useEffect(() => {
+  console.log("Page switch detected")
+  if(appName == "HeliumTest") {
+    if(props.token != null) {
+    fetchHelium(null)
+    }
+  }
+  if(appName == "Leaks") {
+    if(props.token != null) {
+    fetchLeaks(null)
+    }
+  }
+  if(appName == "WoodApp") {
+    if(props.token != null) {
+    fetchWoodApp(null)
+    }
+  }
+
+}, [currentPage])
+
+    
     
 
     
@@ -191,6 +227,7 @@ function setDateRange(dateStart, dateEnd) {
 */
 
   useEffect(() => {
+
     if(props.token != null) {
     if(appName == "Leaks") {
       fetchLeaks();
@@ -219,12 +256,23 @@ function setDateRange(dateStart, dateEnd) {
       console.log("Refreshing data...")
       //login();
       fetchWoodApp();
-      setRefreshData(false);
+      //setRefreshData(false);
     }
   } else if(appName == "HeliumTest") {
-    props.setHeliumSelectorOpen(true);
+    props.setSelectorOpen(appName);
     //fetchHelium();
     listHeliumMachines();
+
+    if(refreshData == true) {
+      console.log("Refreshing data...")
+      //login();
+      //fetchHelium();
+      setRefreshData(false);
+    }
+  } else if(appName == "Cars") {
+    props.setSelectorOpen(appName);
+    //fetchHelium();
+    listCars();
 
     if(refreshData == true) {
       console.log("Refreshing data...")
@@ -235,108 +283,13 @@ function setDateRange(dateStart, dateEnd) {
   }
 
 
-  function fetchLeaks(event) {
-    if (event != null) {
-        event.preventDefault();
-    }
-
-        props.showLoadingScreen();
-        console.log("Attempt to login...");
-
-        var dS = new Date(dateStart)
-        var dSOffset = dS.getTimezoneOffset() * 60000;
-        var dS = new Date(dS.getTime() - dSOffset);
-        var dS = dS.toISOString();
-
-        var dE = new Date(dateEnd)
-        var dEOffset = dE.getTimezoneOffset() * 60000;
-        var dE = new Date(dE.getTime() - dEOffset);
-        var dE = dE.toISOString();
-
-        
-
-        fetch("/fetch_leaks", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                'token': props.token,
-                'dateStart': dS,
-                'dateEnd': dE,
-            })
-        }).then(response => {
-            response.json().then(data => {
-                //console.log(data);
-                if (data.result === "success") {
-                  setRows(data.leaks);
-                  //console.log("Data result length: " + data.leaks.length)
-                  
-                  setCurrentPage(0);
-                } else if((data.result === "error")) {
-                  denyAccess(data.message)
-                }
-            })
-        }).catch(error => {
-            console.error(error);
-            props.hideLoadingScreen();
-        }).finally(() => {
-          props.hideLoadingScreen();
-      });
-  }
 
 
 
 
 
-  function fetchWoodApp(event) {
-    if (event != null) {
-        event.preventDefault();
-    }
 
-        props.showLoadingScreen();
-        console.log("Attempt to login...");
 
-        var dS = new Date(dateStart)
-        var dSOffset = dS.getTimezoneOffset() * 60000;
-        var dS = new Date(dS.getTime() - dSOffset);
-        var dS = dS.toISOString();
-
-        var dE = new Date(dateEnd)
-        var dEOffset = dE.getTimezoneOffset() * 60000;
-        var dE = new Date(dE.getTime() - dEOffset);
-        var dE = dE.toISOString();
-
-        
-
-        fetch("/fetch_woodapp", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                'token': props.token,
-                'dateStart': dS,
-                'dateEnd': dE,
-            })
-        }).then(response => {
-            response.json().then(data => {
-                //console.log(data);
-                if (data.result === "success") {
-                  setRows(data.orders);
-                  //console.log("Data result length: " + data.orders.length)
-                  
-                  setCurrentPage(0);
-                } else if((data.result === "error")) {
-                  denyAccess(data.message)
-                }
-            })
-        }).catch(error => {
-            console.error(error);
-        }).finally(() => {
-          props.hideLoadingScreen();
-      });
-  }
 
 
 
@@ -354,7 +307,7 @@ function setDateRange(dateStart, dateEnd) {
 
   function listHeliumMachines() {
     props.showLoadingScreen();
-    fetch("/helium_list_machines?token=" + props.token, {
+    fetch("/api/helium_list_machines?token=" + props.token, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
@@ -380,15 +333,49 @@ function setDateRange(dateStart, dateEnd) {
 });
   }
 
+
+  function listCars() {
+    props.showLoadingScreen();
+    fetch("/api/cars_list?token=" + props.token, {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+          'token': props.token,
+      })
+  }).then(response => {
+      response.json().then(data => {
+          //console.log(data);
+          if (data.result === "success") {
+            console.log("Available cars:" + data)
+            //props.setAvailableHeliumMachines(data.machines);
+            props.setAvailableCars(data["cars"]);
+          } else if((data.result === "error")) {
+            denyAccess(data.message)
+          }
+      })
+  }).catch(error => {
+      console.error(error);
+  }).finally(() => {
+    props.hideLoadingScreen();
+});
+  }
+
   
     }
-  }, [refreshData, props.token])
+
+
+
+
+    
+  }, [refreshData, props.token, editModalState])
 
 
 
 
   // Define a function to perform the parsing of a single machine
-const parseMachineData = (machineIndex, machineIteration, props) => {
+const parseMachineData = (machineIndex, machineIteration, props) => { //OLD
   const machineName = props.availableHeliumMachines[machineIndex]["name"];
  
   return new Promise((resolve, reject) => {
@@ -443,14 +430,13 @@ const parseMachineData = (machineIndex, machineIteration, props) => {
 
 
 
- const denyAccess = (message) => {
-  alert("Error: " + message);
-  window.location.href = "/";
-}
 
 
 
 
+
+
+/*
 const getPromises = () => {
   var promises = [];
   props.selectedHeliumMachinesId.forEach((machineIndex) => {
@@ -460,125 +446,480 @@ const getPromises = () => {
   });
   return promises;
 }
+*/
 
 
-  function fetchHelium(event) {
-    if (event != null) {
-        event.preventDefault();
-    }
 
-        props.showLoadingScreen();
-        setRows([]);
-        props.setFilteredRows([]);
-        tempHeliumHeaders.current = [];
-        tempRows.current = [];
-
-    
-  
-    
-
-Promise.all(getPromises())
-.then(() => {
-  setRows(tempRows.current);
-  props.setHeliumHeaders(tempHeliumHeaders.current);
-  console.log("All machines parsed!");
-  console.log("First row: " + tempRows.current[0]);
-  tempHeliumHeaders.current = [];
-})
-.catch((error) => {
-  console.error("Error occurred while parsing machines:", error);
-  props.notify("error", "contact")
-})
-.finally(() => {
-  props.hideLoadingScreen();
-});
-  
-      
+function fetchHelium(event) {
+  if (event != null) {
+      event.preventDefault();
   }
 
+      props.showLoadingScreen();
+      /*
+      setRows([]);
+      props.setFilteredRows([]);
+      tempHeliumHeaders.current = [];
+      tempRows.current = [];
+*/
+  
+
+  
+/*
+Promise.all(getPromises())
+.then(() => {
+setRows(tempRows.current);
+props.setHeliumHeaders(tempHeliumHeaders.current);
+console.log("All machines parsed!");
+console.log("First row: " + tempRows.current[0]);
+tempHeliumHeaders.current = [];
+})
+.catch((error) => {
+console.error("Error occurred while parsing machines:", error);
+props.notify("error", "contact")
+})
+.finally(() => {
+props.hideLoadingScreen();
+});
+*/
 
 
-  useEffect(() => {
-    console.log("Search tags: ", searchTags)
-    props.showLoadingScreen();
-    props.setIsSearching(true);
-    
-  }, [searchTags, rows])
 
+chunks.current = []; // For accumulating the CSV data
 
-  useEffect(() => {
-    if(!props.heliumSelectorOpen) {
-      fetchHelium();
+fetch("/api/fetch_helium", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: getHeliumFetchBody()
+})
+.then(response => {
+    if (exporting) {
+      readStream(response);
+      
+    } else {
+        return response.json();
     }
-  }, [props.heliumSelectorOpen])
+})
+.then(dataOrStream => {
+    if (!exporting) { // JSON processing
+        if (dataOrStream.result === "success") {
+            setRows(dataOrStream.helium);
+            pagesCount.current = dataOrStream.pagesCount
+        } else if (dataOrStream.result === "error") {
+            denyAccess(dataOrStream.message);
+        }
+        props.hideLoadingScreen();
+    }
+})
+.catch(error => {
+    console.error(error);
+    props.hideLoadingScreen();
+})
+.finally(() => {
+    
+    
+});
+
+
+
+
+/*
+fetch("/api/fetch_helium", {
+  method: "POST",
+  headers: {
+      "Content-Type": "application/json"
+  },
+  body: getHeliumFetchBody()
+}).then(response => {
+  const reader = response.body.getReader();
+
+  return reader.read().then(function processText({ done, value }) {
+      if (done) {
+          console.log("All data received");
+          return;
+      }
+
+      const decodedData = new TextDecoder("utf-8").decode(value);
+      const data = JSON.parse(decodedData);
+
+      console.log(data.message);
+
+      if (data.file_ready) {
+          window.location.href = "/download_exported?token=" + props.token;
+          return;
+      }
+
+      return reader.read().then(processText); // Continue processing the stream
+  });
+});
+*/
+
+
+}
+
+
+
+
+function readStream(response) {
+  const reader = response.body.getReader();
+      return new ReadableStream({
+          start(controller) {
+              function push() {
+                  reader.read().then(({ done, value }) => {
+                    if (done) {
+                        controller.close();
+                        // Convert accumulated chunks to a blob
+                        const blob = new Blob(chunks.current, { type: 'text/csv' });
+
+                        // Create a new object URL
+                        const url = window.URL.createObjectURL(blob);
+
+                        // Create a link element
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', 'export.csv'); // Name of downloaded file
+                        
+                        // Append the link to the body (required for Firefox)
+                        document.body.appendChild(link);
+
+                        // Simulate a click on the link to start the download
+                        link.click();
+
+                        // Clean up: Remove the link and revoke the object URL
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+
+                        setExporting(false);
+                        props.hideLoadingScreen();
+                        //break;
+                    }
+                    
+                    
+                    var string = new TextDecoder("utf-8").decode(value);
+
+                    if(tempRow.current != null) {
+                      string = tempRow.current + string;
+                    }
+                    
+                    tempRow.current = getLastNonDelimitedElement(string, "\n");
+                    var splittedNewLines = string.split("\n");
+                    if(tempRow.current != null) {
+                      //get lines without last element
+                      splittedNewLines = splittedNewLines.slice(0, splittedNewLines.length - 1);
+                    }
+
+                    
+                    
+                    var splittedRow = "";
+
+                    splittedNewLines.forEach(element => {
+                      if(element != null || element != "" || element != undefined) {
+                      splittedRow = element.split("@@DATA_SEPARATOR@@")
+                      if(splittedRow[1] != null || splittedRow[1] != "" || splittedRow[1] != undefined) {
+                        chunks.current.push(splittedRow[1]);
+                    }
+                  }
+                    })
+
+                    setExportedCount(splittedRow[0]);
+                  controller.enqueue(value);
+                  push();
+                });
+              }
+              push();
+          }
+        });
+}
+
+
+function getLastNonDelimitedElement(str, delimiter) {
+  // Check if the string ends with the delimiter
+  if (str.endsWith(delimiter)) {
+    return null;  // or return an empty string ('') if you prefer
+  }
+  
+  let parts = str.split(delimiter);
+  return parts[parts.length - 1];
+}
+
+
+
+function fetchLeaks(event) {
+  if (event != null) {
+      event.preventDefault();
+  }
+
+      props.showLoadingScreen();
+      console.log("Attempt to login...");
+
+
+      fetch("/api/fetch_leaks", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: getLeaksFetchBody()
+      }).then(response => {
+        if (exporting) {
+            readStream(response); // Placeholder for streaming function similar to readStream
+        } else {
+            return response.json();
+        }
+    })
+    .then(dataOrStream => {
+        if (!exporting) {
+            if (dataOrStream.result === "success") {
+                setRows(dataOrStream.leaks);
+                pagesCount.current = dataOrStream.pagesCount
+            } else if (dataOrStream.result === "error") {
+                denyAccess(dataOrStream.message);
+            }
+            props.hideLoadingScreen();
+        }
+    })
+        .catch(error => {
+          console.error(error);
+          props.hideLoadingScreen();
+          }).finally(() => {
+          props.hideLoadingScreen();
+    });
+}
+
+
+function fetchCars(event) {
+  if (event != null) {
+      event.preventDefault();
+  }
+
+      props.showLoadingScreen();
+      console.log("Attempt to login...");
+
+
+      fetch("/api/fetch_cars", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: getLeaksFetchBody()
+      }).then(response => {
+        if (exporting) {
+            readStream(response); // Placeholder for streaming function similar to readStream
+        } else {
+            return response.json();
+        }
+    })
+    .then(dataOrStream => {
+        if (!exporting) {
+            if (dataOrStream.result === "success") {
+                setRows(dataOrStream.cars);
+                pagesCount.current = dataOrStream.pagesCount
+            } else if (dataOrStream.result === "error") {
+                denyAccess(dataOrStream.message);
+            }
+            props.hideLoadingScreen();
+        }
+    })
+        .catch(error => {
+          console.error(error);
+          props.hideLoadingScreen();
+          }).finally(() => {
+          props.hideLoadingScreen();
+    });
+}
+
+
+function fetchWoodApp(event) {
+  if (editModalState == null) {
+      if (event != null) {
+          event.preventDefault();
+      }
+
+      props.showLoadingScreen();
+
+      fetch("/api/fetch_woodapp", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: getWoodAppFetchBody()
+      })
+      .then(response => {
+          if (exporting) {
+              readStream(response); // Placeholder for streaming function similar to readStream
+          } else {
+              return response.json();
+          }
+      })
+      .then(dataOrStream => {
+          if (!exporting) {
+              if (dataOrStream.result === "success") {
+                  setRows(dataOrStream.orders);
+                  pagesCount.current = dataOrStream.pagesCount
+              } else if (dataOrStream.result === "error") {
+                  denyAccess(dataOrStream.message);
+              }
+              props.hideLoadingScreen();
+          }
+      })
+      .catch(error => {
+          console.error(error);
+          props.hideLoadingScreen();
+      });
+  }
+}
+
+
+
+
+
+
+function getHeliumFetchBody() {
+  console.log("Getting body...")
+
+  var dS = new Date(dateStart)
+  var dSOffset = dS.getTimezoneOffset() * 60000;
+  var dS = new Date(dS.getTime() - dSOffset);
+  var dS = dS.toISOString();
+
+  var dE = new Date(dateEnd)
+  var dEOffset = dE.getTimezoneOffset() * 60000;
+  var dE = new Date(dE.getTime() - dEOffset);
+  var dE = dE.toISOString();
+
+
+var selectedMachines = [];
+
+for (let i = 0; i < props.selectedHeliumMachinesId.length; i++) {
+  selectedMachines.push(props.availableHeliumMachines[props.selectedHeliumMachinesId[i]]);
+}
+
+return JSON.stringify({
+  'token': props.token,
+  'dateStart': dS,
+  'dateEnd': dE,
+  'selectedMachines': selectedMachines,
+  'search': searchTags,
+  'page': currentPage,
+  'export': exporting
+})
+}
+
+
+function getLeaksFetchBody() {
+  console.log("Getting body...")
+
+  var dS = new Date(dateStart)
+  var dSOffset = dS.getTimezoneOffset() * 60000;
+  var dS = new Date(dS.getTime() - dSOffset);
+  var dS = dS.toISOString();
+
+  var dE = new Date(dateEnd)
+  var dEOffset = dE.getTimezoneOffset() * 60000;
+  var dE = new Date(dE.getTime() - dEOffset);
+  var dE = dE.toISOString();
+
+return JSON.stringify({
+  'token': props.token,
+  'dateStart': dS,
+  'dateEnd': dE,
+  //'selectedMachines': selectedMachines,
+  'search': searchTags,
+  'page': currentPage,
+  "export": exporting
+})
+}
+
+
+function getWoodAppFetchBody() {
+  console.log("Getting body...")
+
+  var dS = new Date(dateStart)
+  var dSOffset = dS.getTimezoneOffset() * 60000;
+  var dS = new Date(dS.getTime() - dSOffset);
+  var dS = dS.toISOString();
+
+  var dE = new Date(dateEnd)
+  var dEOffset = dE.getTimezoneOffset() * 60000;
+  var dE = new Date(dE.getTime() - dEOffset);
+  var dE = dE.toISOString();
+
+
+
+return JSON.stringify({
+  'token': props.token,
+  'dateStart': dS,
+  'dateEnd': dE,
+  'search': searchTags,
+  'page': currentPage,
+  'export': exporting
+})
+}
+
+  
+
+
+
+  useEffect(() => {
+    //TODO: Sprawdzić czy działa
+    if(appName != "HeliumTest" && appName != "Cars") {
+      console.log("Search tags: ", searchTags)
+      props.showLoadingScreen();
+      props.setIsSearching(true);
+      
+    }
+    
+    
+  }, [searchTags])
+
+
+  useEffect(() => {
+    if(props.token != null) {
+    if(appName == "HeliumTest") {
+      
+      props.showLoadingScreen();
+
+      if(props.selectedHeliumMachinesId.length != 0) {
+        console.log("Refreshing with search tags: ", searchTags)
+        fetchHelium(null);
+      }
+
+      //props.setIsSearching(true);
+      setCurrentPage(0)
+    }
+    if(appName == "Leaks") {
+        props.showLoadingScreen();
+        fetchLeaks(null);
+        setCurrentPage(0)
+      }
+      if(appName == "WoodApp") {
+        props.showLoadingScreen();
+        fetchWoodApp(null);
+        setCurrentPage(0)
+      }
+      if(appName == "Cars") {
+        //fetchCars(null);
+        setCurrentPage(0)
+      }
+    }
+  }, [searchTags, exporting])
+
+
+  useEffect(() => {
+    const prevSelectorOpen = prevSelectorOpenRef.current;
+    if(appName == "HeliumTest") {
+      if (prevSelectorOpen && !props.selectorOpen) {
+        fetchHelium(null);
+       }
+    }
+    prevSelectorOpenRef.current = props.selectorOpen;
+  }, [props.selectorOpen])
 
 
   useEffect(() => {
     console.log("Promises changed to: " + promises.current)
   }, [promises.current])
-
-
-
-  useEffect(() => {
-    if (props.isSearching) {
-      if(appName == "HeliumTest") {
-        var filtered2 = [];
-
-      if (searchTags?.length == 0) {
-        console.log("All rows shown!");
-        filtered2 = rows.slice().reverse(); // Exclude the first row using slice(1)
-      } else {
-        const filtered = rows.filter((row) => {
-          return searchTags.some((tag) => {
-            return Object.values(row).some((value) => {
-              return String(value).toLowerCase().includes(tag.toLowerCase());
-            });
-          });
-        });
-        
-        filtered2 = filtered.slice().reverse();
-      }
-
-      
-      const filteredByDate = filtered2.filter((item) => {
-        const itemDate = new Date(item["DATE-TIME"]);
-        return itemDate >= dateStart && itemDate <= dateEnd;
-      });
-
-      console.log("Filtered rows: ", filteredByDate)
-      props.setFilteredRows(filteredByDate);
-
-
-    } else {
-      //TODO: Zrobić też dla innych aplikacji
-      if (searchTags?.length == 0) {
-        console.log("All rows shown!");
-        props.setFilteredRows(rows); // Exclude the first row using slice(1)
-      } else {
-        const filtered = rows.filter((row, index) => {
-          return Object.values(row).some((value) =>
-            String(value).toLowerCase().includes(searchTags[0].toLowerCase())
-          );
-        });
-  
-        props.setFilteredRows(filtered);
-    }
-  }
-}
-
-  }, [appName, props.isSearching, searchTags]);
-
-  
-
-
-
-  useEffect(() => {
-    setPagesCount(Math.ceil(props.filteredRows.length / rowsPerPage));
-    setCurrentPage(0);
-      props.setIsSearching(false);
-      props.hideLoadingScreen();
-  }, [props.filteredRows])
-
 
 
   function handlePasswordChange() {
@@ -587,7 +928,11 @@ Promise.all(getPromises())
 
 
 
+  
+    
 
+
+  
       
 
     return (
@@ -600,7 +945,7 @@ Promise.all(getPromises())
 
     <Grid container sx={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 5 }}>
 
-    {props.filteredRows.length > 0 && props.filteredRows.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(fix => (
+    {props.rows?.map((fix, index) => (
     <ExpandingRow
     fixData={fix}
     notify={(action, text) => { props.notify(action, text) }}
@@ -617,7 +962,7 @@ Promise.all(getPromises())
     <Grid item xs={12} md={3} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
     <Button fullWidth onClick={() => { window.scrollTo({top: 0, behavior: 'smooth'}); props.setRefreshData(true)}} size="large" variant="outlined">Odśwież i przejdź do pierwszej strony</Button>
     </Grid>
-    { currentPage < pagesCount - 1 && (
+    { currentPage < pagesCount.current - 1 && (
     <Grid item xs={12} md={2} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
     <Button fullWidth onClick={() => { window.scrollTo({top: 0, behavior: 'smooth'}); setCurrentPage(currentPage + 1) }} size="large" variant="contained">Następna strona <ArrowForwardIosIcon /></Button>
     </Grid>
@@ -644,7 +989,7 @@ Promise.all(getPromises())
               </TableRow>
             </TableHead>
             <TableBody>
-              {props.filteredRows.length > 0 && props.filteredRows.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map(order => (
+              {props.rows?.map((order, index) => (
                 <TableRow style={{ background: "rgba(0, 0, 0, 0.5)" }}>
                   { columnOrder[appName].map(columnId => {
                     return <TableCell key={columnId} className={`${classes.body} ${tableCellClasses.body}`}>{ order[columnId]?.toLocaleString() }</TableCell>;
@@ -667,18 +1012,11 @@ Promise.all(getPromises())
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell className={`${classes.head} ${tableCellClasses.head}`}>Nazwa maszyny</TableCell>
-            {
-            /*props.rows[0]?.map(columnName => (
-              <TableCell key={columnName} className={`${classes.head} ${tableCellClasses.head}`}>{columnName}</TableCell>
-            ))*/}
             
 
-              {props.heliumHeaders?.map((heliumHeader, index) => (
-                visibleRowsNames.current.includes(heliumHeader) && (
-                  <TableCell key={index} className={`${classes.head} ${tableCellClasses.head}`}>{heliumHeader}</TableCell>
-                )
-              ))}
+            { columnOrder[appName].map(columnId => {
+                  return <TableCell key={columnId} className={`${classes.head} ${tableCellClasses.head}`}>{extractedHeaders[columnId]}</TableCell>;
+                })}
 
             
             {/* If you want an additional column for actions, you can include it here */}
@@ -686,30 +1024,27 @@ Promise.all(getPromises())
           </TableRow>
         </TableHead>
         <TableBody>
-  {props.filteredRows?.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage).map((helium, index) => {
-    const resultValue = helium["RESULT"];
+  {/*props.rows?.map((helium, index) => {
+    const resultValue = helium[9];
 
     return (
-      <TableRow key={index} style={{ background: resultValue === "Good" ? "rgba(0,128,0,0.9)" : resultValue === "Reject" ? "rgba(255,0,0,0.9)" : "rgba(0, 0, 0, 0.5)" }}>
-        {/*Object.keys(helium).map(columnName => (
-          (visibleRowsNames.current.includes(columnName) || columnName === "MachineName") && (
-            <TableCell key={columnName} className={`${classes.body}`}>{helium[columnName]?.toLocaleString()}</TableCell>
-          )
-          ))*/}
+      <TableRow key={index} style={{ background: (resultValue === "Good" || resultValue.includes("BUONO")) ? "rgba(0,128,0,0.9)" : (resultValue === "Reject" || resultValue.includes("ANOMALIA")) ? "rgba(255,0,0,0.9)" : "rgba(0, 0, 0, 0.5)" }}>
+        { columnOrder[appName].map(columnId => {
+          var display = [helium[columnId]?.toLocaleString()]
+          if(columnId == 0) {
+            display[0] = display[0].split("\\")[1]
+            if(helium[columnId].includes("2023")) {
+              display[1] = "2023"
+            } else {
+              display[1] = "OLD"
+            }
+          }
+          return <TableCell key={columnId} className={`${classes.body} ${tableCellClasses.body}`}>{ display.join("_") }</TableCell>;
+        })}
 
-<TableCell key={index} className={`${classes.body}`}>{helium["MachineName"]?.toLocaleString() || "Brak nazwy maszyny"}</TableCell>
-
-          {props.heliumHeaders?.map((heliumHeader, index) => (
-            (visibleRowsNames.current.includes(heliumHeader)) && (
-              <TableCell key={index} className={`${classes.body}`}>{helium[heliumHeader]?.toLocaleString() || <BlockIcon />}</TableCell>
-            )
-          ))}
-
-        {/* If you have an actions column, you can include it here */}
-        {/* <TableCell>Actions for this row</TableCell> */}
       </TableRow>
     );
-  })}
+  })*/}
 </TableBody>
       </Table>
     </TableContainer>
@@ -720,7 +1055,10 @@ Promise.all(getPromises())
 )}
 
                 
-   <EditModal appName={appName} token={props.token} editModalState={editModalState} setEditModalState={setEditModalState} filteredRows={props.filteredRows} />
+    <EditModal notify={(action, text) => { props.notify(action, text) }} showLoadingScreen={props.showLoadingScreen} hideLoadingScreen={props.hideLoadingScreen} rows={props.rows} appName={appName} token={props.token} editModalState={editModalState} setEditModalState={setEditModalState} />
+    {/*TODO:
+      <ReplyDialog open={props.isPriceChangeWindowOpened} />
+    */}
     </Box>
     )
 

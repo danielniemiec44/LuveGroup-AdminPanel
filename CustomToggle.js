@@ -2,23 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { FormControlLabel, Checkbox, ToggleButton, Typography } from '@mui/material';
 
 const CustomToggle = (props) => {
-  const [isChecked, setIsChecked] = useState(props.selectedHeliumMachinesId.includes(props.index));
+  const [isChecked, setIsChecked] = useState(props.appName == "HeliumTest" ? props.selectedHeliumMachinesId.includes(props.index) : false);
 
   const handleChange = () => {
     setIsChecked((prev) => !prev);
   };
 
   useEffect(() => {
-    if (isChecked) {
-      // Check if the props.index is not already present in the array
-      if (!props.selectedHeliumMachinesId.includes(props.index)) {
-        props.setSelectedHeliumMachinesId([...props.selectedHeliumMachinesId, props.index]);
+    console.log("AppName: " + props.appName)
+    if(props.appName == "HeliumTest") {
+      if (isChecked) {
+        // Check if the props.index is not already present in the array
+        if (!props.selectedHeliumMachinesId.includes(props.index)) {
+          props.setSelectedHeliumMachinesId([...props.selectedHeliumMachinesId, props.index]);
+        }
+      } else {
+        // Remove the props.index from the array if it exists
+        props.setSelectedHeliumMachinesId(props.selectedHeliumMachinesId.filter(item => item !== props.index));
       }
-    } else {
-      // Remove the props.index from the array if it exists
-      props.setSelectedHeliumMachinesId(props.selectedHeliumMachinesId.filter(item => item !== props.index));
     }
-  }, [isChecked]);
+  }, [isChecked, props.appName]);
+
 
   return (
     <label style={{ display: "inline-flex" }}>

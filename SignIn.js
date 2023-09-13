@@ -12,67 +12,14 @@ import { Button, Grid, Paper, Stack, TextField, Typography } from "@mui/material
 import PanelV2 from "./PanelV2";
 import { createContext, useContext } from 'react';
 import { ArrowForwardIosOutlined } from "@mui/icons-material";
-
+import { MyContext } from "./App";
 
 export default function SignIn(props) {
     const [password, setPassword] = useState("");
     const [userId, setUserId] = useState("");
+    const { carsPerms, setCarsPerms } = useContext(MyContext);
 
-
-    /*
-    async function login(event) {
-        props.showLoadingScreen();
-        if (event != null) {
-          event.preventDefault();
-        }
-      
-        if (password !== "") {
-          
-          console.log("Attempt to login...");
-      
-          const response = await fetch("http://10.2.2.238:6000/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              'token': 'admin',
-              "password": password,
-              "dateStart": dateStart,
-              "dateEnd": dateEnd,
-            })
-          });
-      
-          try {
-            const data = await response.json();
-            console.log(data);
-            if (data.result === "success") {
-              setSignedIn(true);
-              props.setUserId("0000");
-              props.setName("Admin");
-              const mappedFixes = data.fixes.map((fix) => {
-                return {
-                  fixId: fix.fixId,
-                  employeeId: fix.employeeId,
-                  startTime: fix.startTime,
-                  endTime: fix.endTime,
-                  responsiblePerson: fix.responsiblePerson,
-                  orderId: fix.orderId,
-                  loginTime: fix.loginTime,
-                  leakId: fix.leakId,
-                };
-              });
-              setRows(mappedFixes);
-              console.log("Mapped: " + mappedFixes);
-            }
-          } catch (error) {
-            console.error(error);
-          } finally {
-            props.hideLoadingScreen();
-          }
-        }
-      }
-      */
+    
 
 
       const handleUsernameChange = (event) => {
@@ -94,7 +41,7 @@ export default function SignIn(props) {
             props.showLoadingScreen();
             console.log("Attempt to login...");
     
-            fetch("/login", {
+            fetch("/api/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -116,10 +63,12 @@ export default function SignIn(props) {
                       props.setLeaksPerms(data['employee']['leaks_perms']);
                       props.setWoodAppPerms(data['employee']['woodapp_perms']);
                       props.setHeliumPerms(data['employee']['helium_perms']);
+                      setCarsPerms(data['employee']['cars_perms']);
 
                       sessionStorage.setItem('leaks_perms', data['employee']['leaks_perms']);
                       sessionStorage.setItem('woodapp_perms', data['employee']['woodapp_perms']);
                       sessionStorage.setItem('helium_perms', data['employee']['helium_perms']);
+                      sessionStorage.setItem('cars_perms', data['employee']['cars_perms']);
 
                       sessionStorage.setItem('token', data.token);
                       sessionStorage.setItem('userId', userId);
